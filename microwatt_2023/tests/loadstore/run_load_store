@@ -1,0 +1,14 @@
+#!/bin/bash
+#
+# Script to update loop_perf from source
+#
+
+for i in loadstore ; do
+    make clean
+    make
+    cd -
+    cp $i/$i.bin test_$i.bin
+    ln -s test_$i.bin main_ram.bin
+    ../core_tb > $i/test_$i.log_out 2> $i/test_$i.console_out
+    rm main_ram.bin
+done
