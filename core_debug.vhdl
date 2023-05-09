@@ -5,6 +5,7 @@ use ieee.numeric_std.all;
 library work;
 use work.utils.all;
 use work.common.all;
+use work.CommonDef.all;
 
 entity core_debug is
     generic (
@@ -168,7 +169,7 @@ begin
             do_icreset <= '0';
             do_dmi_log_rd <= '0';
 
-            if (rst) then
+            if (rst='1') then
                 stopping <= '0';
                 terminated <= '0';
                 log_trigger_delay <= 0;
@@ -188,7 +189,7 @@ begin
                 dmi_req_1 <= dmi_req;
                 if dmi_req = '1' and dmi_req_1 = '0' then
                     if dmi_wr = '1' then
-                        report("DMI write to " & to_hstring(dmi_addr));
+                        report("DMI write to " & get_hstring(dmi_addr));
 
                         -- Control register actions
                         if dmi_addr = DBG_CORE_CTRL then
@@ -219,7 +220,7 @@ begin
                             log_dmi_trigger <= dmi_din;
                         end if;
                     else
-                        report("DMI read from " & to_string(dmi_addr));
+                        report("DMI read from " & get_hstring(dmi_addr));
                     end if;
 
                 elsif dmi_read_log_data = '0' and dmi_read_log_data_1 = '1' then
@@ -335,7 +336,7 @@ begin
                               addr : std_ulogic_vector(31 downto 0)) return std_ulogic_vector is
             variable firstbit : integer;
         begin
-            assert not is_X(addr);
+            assert not is_X(std_ulogic_vector(addr));
             firstbit := to_integer(unsigned(addr(1 downto 0))) * 64;
             return data(firstbit + 63 downto firstbit);
         end;
@@ -353,10 +354,10 @@ begin
         begin
             if rising_edge(clk) then
                 if log_wr_enable = '1' then
-                    assert not is_X(log_wr_ptr);
+                    assert not is_X(std_ulogic_vector(log_wr_ptr));
                     log_array(to_integer(log_wr_ptr)) <= log_data;
                 end if;
-                if is_X(log_rd_ptr_latched) then
+                if is_X(std_ulogic_vector(log_rd_ptr_latched)) then
                     log_rd <= (others => 'X');
                 else
                     log_rd <= log_array(to_integer(log_rd_ptr_latched));

@@ -22,6 +22,7 @@ use work.utils.all;
 use work.common.all;
 use work.decode_types.all;
 use work.wishbone_types.all;
+use work.CommonDef.all;
 
 -- 64 bit direct mapped icache. All instructions are 4B aligned.
 
@@ -316,7 +317,7 @@ architecture rtl of icache is
     -- Get the tag value from the address
     function get_tag(addr: real_addr_t; endian: std_ulogic) return cache_tag_t is
     begin
-        return endian & addr(addr'left downto SET_SIZE_BITS);
+        return endian & std_logic_vector(addr(addr'left downto SET_SIZE_BITS));
     end;
 
     -- Read a tag from a tag memory row
@@ -412,6 +413,7 @@ begin
 	signal rd_addr  : std_ulogic_vector(ROW_BITS-1 downto 0);
 	signal wr_addr  : std_ulogic_vector(ROW_BITS-1 downto 0);
 	signal dout     : cache_row_t;
+	signal dout_conv: std_logic_vector(row_width - 1 downto 0);
 	signal wr_sel   : std_ulogic_vector(0 downto 0);
     begin
 	way: entity work.cache_ram
@@ -423,11 +425,11 @@ begin
 	    port map (
 		clk     => clk,
 		rd_en   => do_read,
-		rd_addr => rd_addr,
-		rd_data => dout,
-		wr_sel  => wr_sel,
-		wr_addr => wr_addr,
-		wr_data => cache_wr_data
+		rd_addr => std_logic_vector(rd_addr),
+		rd_data => dout_conv,
+		wr_sel  => std_logic_vector(wr_sel),
+		wr_addr => std_logic_vector(wr_addr),
+		wr_data => std_logic_vector(cache_wr_data)
 		);
 	process(all)
 	begin
@@ -574,7 +576,7 @@ begin
 	hit_way := to_unsigned(0, WAY_BITS);
 	is_hit := '0';
         if i_in.req = '1' then
-            assert not is_X(req_index) and not is_X(req_row) severity failure;
+            assert not is_X(std_ulogic_vector(req_index)) and not is_X(std_ulogic_vector(req_row)) severity failure;
         end if;
 	for i in way_t loop
 	    if i_in.req = '1' and
@@ -611,7 +613,7 @@ begin
         insn := (others => '0');
         icode := INSN_illegal;
 	if r.hit_valid = '1' then
-            assert not is_X(r.hit_way) severity failure;
+            assert not is_X(std_ulogic_vector(r.hit_way)) severity failure;
             insn := read_insn_word(r.hit_nia, cache_out(to_integer(r.hit_way)));
             -- Currently we use only the top bit for indicating illegal
             -- instructions because we know that insn_codes fit into 9 bits.
@@ -659,13 +661,13 @@ begin
 		    -- this is a bit fragile but better than propogating bad values
 		    assert not is_X(i_in.nia) report "metavalue in NIA" severity FAILURE;
 
-                    report "cache hit nia:" & to_hstring(i_in.nia) &
+                    report "cache hit nia:" & get_hstring(i_in.nia) &
                         " IR:" & std_ulogic'image(i_in.virt_mode) &
                         " SM:" & std_ulogic'image(i_in.stop_mark) &
-                        " idx:" & to_hstring(req_index) &
-                        " tag:" & to_hstring(req_tag) &
-                        " way:" & to_hstring(req_hit_way) &
-                        " RA:" & to_hstring(real_addr);
+                        " idx:" & get_hstring(std_ulogic_vector(req_index)) &
+                        " tag:" & get_hstring(std_ulogic_vector(req_tag)) &
+                        " way:" & get_hstring(std_ulogic_vector(req_hit_way)) &
+                        " RA:" & get_hstring(std_ulogic_vector(real_addr));
                 end if;
 	    end if;
             if stall_in = '0' then
@@ -721,7 +723,7 @@ begin
                 snoop_tag := get_tag(snoop_addr, '0');
                 snoop_hits <= (others => '0');
                 if snoop_valid = '1' then
-                    if is_X(snoop_addr) then
+                    if is_X(std_ulogic_vector(snoop_addr)) then
                         report "metavalue in snoop_addr" severity FAILURE;
                     end if;
                     snoop_cache_tags := cache_tags(to_integer(get_index(snoop_addr)));
@@ -746,7 +748,7 @@ begin
                     -- cycle after the address appears on wb_snoop_in.
                     for i in way_t loop
                         if snoop_hits(i) = '1' then
-                            assert not is_X(snoop_index) severity failure;
+                            assert not is_X(std_ulogic_vector(snoop_index)) severity failure;
                             cache_valids(to_integer(snoop_index))(i) <= '0';
                         end if;
                     end loop;
@@ -762,12 +764,12 @@ begin
 
 		    -- We need to read a cache line
 		    if req_is_miss = '1' then
-			report "cache miss nia:" & to_hstring(i_in.nia) &
+			report "cache miss nia:" & get_hstring(i_in.nia) &
                             " IR:" & std_ulogic'image(i_in.virt_mode) &
 			    " SM:" & std_ulogic'image(i_in.stop_mark) &
-			    " idx:" & to_hstring(req_index) &
-			    " tag:" & to_hstring(req_tag) &
-                            " RA:" & to_hstring(real_addr);
+			    " idx:" & get_hstring(std_ulogic_vector(req_index)) &
+			    " tag:" & get_hstring(std_ulogic_vector(req_tag)) &
+                            " RA:" & get_hstring(std_ulogic_vector(real_addr));
                         ev.icache_miss <= '1';
 
 			-- Keep track of our index and way for subsequent stores
@@ -790,9 +792,9 @@ begin
 		    end if;
 
 		when CLR_TAG | WAIT_ACK =>
-                    assert not is_X(r.store_index) severity failure;
-                    assert not is_X(r.store_row) severity failure;
-                    assert not is_X(r.recv_row) severity failure;
+                    assert not is_X(std_ulogic_vector(r.store_index)) severity failure;
+                    assert not is_X(std_ulogic_vector(r.store_row)) severity failure;
+                    assert not is_X(std_ulogic_vector(r.recv_row)) severity failure;
                     if r.state = CLR_TAG then
                         replace_way := to_unsigned(0, WAY_BITS);
                         if NUM_WAYS > 1 then
@@ -802,7 +804,7 @@ begin
 			r.store_way <= replace_way;
 
 			-- Force misses on that way while reloading that line
-                        assert not is_X(replace_way) severity failure;
+                        assert not is_X(std_ulogic_vector(replace_way)) severity failure;
                         cache_valids(to_integer(r.store_index))(to_integer(replace_way)) <= '0';
 
 			-- Store new tag in selected way

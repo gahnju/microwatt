@@ -2,6 +2,8 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.math_real.all;
+library work;
+use work.CommonDef.all;
 
 entity cache_ram is
     generic(
@@ -45,9 +47,9 @@ begin
         if rising_edge(clk) then
             if TRACE then
                 if wr_sel /= sel0 then
-                    report "write a:" & to_hstring(wr_addr) &
-                        " sel:" & to_hstring(wr_sel) &
-                        " dat:" & to_hstring(wr_data);
+                    report "write a:" & get_hstring(std_ulogic_vector(wr_addr)) &
+                        " sel:" & get_hstring(std_ulogic_vector(wr_sel)) &
+                        " dat:" & get_hstring(std_ulogic_vector(wr_data));
                 end if;
             end if;
             for i in 0 to WIDTH/BYTEWID-1 loop
@@ -63,8 +65,8 @@ begin
                 assert not is_X(rd_addr);
                 rd_data0 <= ram(to_integer(unsigned(rd_addr)));
                 if TRACE then
-                    report "read a:" & to_hstring(rd_addr) &
-                        " dat:" & to_hstring(ram(to_integer(unsigned(rd_addr))));
+                    report "read a:" & get_hstring(std_ulogic_vector(rd_addr)) &
+                        " dat:" & get_hstring(std_ulogic_vector(ram(to_integer(unsigned(rd_addr)))));
                 end if;
             end if;
         end if;

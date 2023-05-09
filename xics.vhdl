@@ -23,6 +23,7 @@ use ieee.numeric_std.all;
 library work;
 use work.common.all;
 use work.wishbone_types.all;
+use work.CommonDef.all;
 
 entity xics_icp is
     port (
@@ -50,7 +51,9 @@ architecture behaviour of xics_icp is
         (wb_ack => '0',
          mfrr => x"ff", -- mask everything on reset
          irq => '0',
-         others => (others => '0'));
+         wb_rd_data => (others => '0'),
+         cppr => (others => '0'),
+         xisr => (others => '0'));
 
     signal r, r_next : reg_internal_t;
 
@@ -115,20 +118,20 @@ begin
                 when XIRR =>
                     v.cppr := be_in(31 downto 24);
                     if wb_in.sel = x"f"  then -- 4 byte
-                        report "ICP XIRR write word (EOI) :" & to_hstring(be_in);
+                        report "ICP XIRR write word (EOI) :" & get_hstring(be_in);
                     elsif wb_in.sel = x"1"  then -- 1 byte
-                        report "ICP XIRR write byte (CPPR):" & to_hstring(be_in(31 downto 24));
+                        report "ICP XIRR write byte (CPPR):" & get_hstring(be_in(31 downto 24));
                     else
-                        report "ICP XIRR UNSUPPORTED write ! sel=" & to_hstring(wb_in.sel);
+                        report "ICP XIRR UNSUPPORTED write ! sel=" & get_hstring(wb_in.sel);
                     end if;
                 when MFRR =>
                     v.mfrr := be_in(31 downto 24);
                     if wb_in.sel = x"f" then -- 4 bytes
-                        report "ICP MFRR write word:" & to_hstring(be_in);
+                        report "ICP MFRR write word:" & get_hstring(be_in);
                     elsif wb_in.sel = x"1" then -- 1 byte
-                        report "ICP MFRR write byte:" & to_hstring(be_in(31 downto 24));
+                        report "ICP MFRR write byte:" & get_hstring(be_in(31 downto 24));
                     else
-                        report "ICP MFRR UNSUPPORTED write ! sel=" & to_hstring(wb_in.sel);
+                        report "ICP MFRR UNSUPPORTED write ! sel=" & get_hstring(wb_in.sel);
                     end if;
                 when others =>                        
                 end case;
@@ -171,9 +174,9 @@ begin
         -- Accept the interrupt
         if xirr_accept_rd = '1' then
             report "XICS: ICP ACCEPT" &
-                " cppr:" &  to_hstring(r.cppr) &
-                " xisr:" & to_hstring(r.xisr) &
-                " mfrr:" & to_hstring(r.mfrr);
+                " cppr:" &  get_hstring(r.cppr) &
+                " xisr:" & get_hstring(r.xisr) &
+                " mfrr:" & get_hstring(r.mfrr);
             v.cppr := pending_priority;
         end if;
 
@@ -204,6 +207,7 @@ use ieee.numeric_std.all;
 
 library work;
 use work.common.all;
+use work.CommonDef.all;
 use work.utils.all;
 use work.wishbone_types.all;
 use work.helpers.all;
@@ -395,12 +399,12 @@ begin
                     xives(i) <= (pri => pri_masked);
                 end loop;
             elsif wb_valid = '1' and wb_in.we = '1' then
-                if reg_is_xive then
+                if reg_is_xive = '1' then
                     -- TODO: When adding support for other bits, make sure to
                     -- properly implement wb_in.sel to allow partial writes.
                     xives(reg_idx).pri <= prio_pack(be_in(7 downto 0));
                     report "ICS irq " & integer'image(reg_idx) &
-                        " set to:" & to_hstring(be_in(7 downto 0));
+                        " set to:" & get_hstring(be_in(7 downto 0));
                 end if;
             end if;
         end if;
@@ -444,7 +448,7 @@ begin
         max_idx := priority_encoder(pending_at_pri, SRC_NUM_BITS);
 
         if max_pri /= pri_masked then
-            report "MFI: " & integer'image(to_integer(unsigned(max_idx))) & " pri=" & to_hstring(prio_unpack(max_pri));
+            report "MFI: " & integer'image(to_integer(unsigned(max_idx))) & " pri=" & get_hstring(prio_unpack(max_pri));
         end if;
         icp_out_next.src <= max_idx;
         icp_out_next.pri <= prio_unpack(max_pri);

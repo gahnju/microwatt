@@ -4,6 +4,7 @@ use ieee.numeric_std.all;
 
 library work;
 use work.common.all;
+use work.CommonDef.all;
 
 -- Radix MMU
 -- Supports 4-level trees as in arch 3.0B, but not the two-step translation for
@@ -97,7 +98,7 @@ begin
                 r.pid <= (others => '0');
             else
                 if rin.valid = '1' then
-                    report "MMU got tlb miss for " & to_hstring(rin.addr);
+                    report "MMU got tlb miss for " & get_hstring(rin.addr);
                 end if;
                 if l_out.done = '1' then
                     report "MMU completing op without error";
@@ -111,8 +112,8 @@ begin
                         " msize=" & integer'image(to_integer(rin.mask_size));
                 end if;
                 if r.state = RADIX_LOOKUP then
-                    report "send load addr=" & to_hstring(d_out.addr) &
-                        " addrsh=" & to_hstring(addrsh) & " mask=" & to_hstring(mask);
+                    report "send load addr=" & get_hstring(d_out.addr) &
+                        " addrsh=" & get_hstring(addrsh) & " mask=" & get_hstring(mask);
                 end if;
                 r <= rin;
             end if;
@@ -163,7 +164,7 @@ begin
     begin
         -- mask_count has to be >= 5
         m := x"001f";
-        if is_X(r.mask_size) then
+        if is_X(std_ulogic_vector(r.mask_size)) then
             m := (others => 'X');
         else
             for i in 5 to 15 loop
@@ -182,7 +183,7 @@ begin
     begin
         m := (others => '0');
         for i in 0 to 43 loop
-            if is_X(r.shift) then
+            if is_X(std_ulogic_vector(r.shift)) then
                 m(i) := 'X';
             elsif i < to_integer(r.shift) then
                 m(i) := '1';
@@ -371,7 +372,7 @@ begin
         when SEGMENT_CHECK =>
             mbits := '0' & r.mask_size;
             v.shift := r.shift + (31 - 12) - mbits;
-            nonzero := or(r.addr(61 downto 31) and not finalmask(30 downto 0));
+            nonzero := or_reduce(r.addr(61 downto 31) and not finalmask(30 downto 0));
             if r.addr(63) /= r.addr(62) or nonzero = '1' then
                 v.state := RADIX_FINISH;
                 v.segerror := '1';

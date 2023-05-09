@@ -162,7 +162,7 @@ begin
     wb_map_valid <= wb_valid and wb_sel_map;
 
     -- Register decode. For map accesses, make it look like "invalid"
-    wb_reg       <= wb_req.adr(SPI_REG_BITS - 1 downto 0) when wb_reg_valid else SPI_REG_INVALID;
+    wb_reg       <= wb_req.adr(SPI_REG_BITS - 1 downto 0) when wb_reg_valid = '1' else SPI_REG_INVALID;
 
     -- Shortcut because we test that a lot: data register access
     wb_reg_dat_v <= '1' when wb_reg = SPI_REG_DATA else '0';

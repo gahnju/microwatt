@@ -3,6 +3,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 library work;
+use work.CommonDef.all;
 
 package helpers is
     function fls_32 (val: std_ulogic_vector(31 downto 0)) return integer;
@@ -243,7 +244,7 @@ package body helpers is
             bit := '0';
             for j in 0 to (64 / stride) - 1 loop
                 k := j * stride;
-                bit := bit or (or a(k + stride - 1 downto k + (stride / 2)));
+                bit := bit or or_reduce(a(k + stride - 1 downto k + (stride / 2)));
             end loop;
             ret(i) := bit;
             stride := stride * 2;

@@ -10,6 +10,7 @@ use work.decode_types.all;
 use work.crhelpers.all;
 use work.helpers.all;
 use work.common.all;
+use work.CommonDef.all;
 
 entity fpu is
     port (
@@ -539,7 +540,7 @@ architecture behaviour of fpu is
         variable mask_result: std_ulogic_vector(63 downto 0);
     begin
         mask_result := (others => '0');
-	if is_X(shift) then
+	if is_X(std_ulogic_vector(shift)) then
 	    mask_result := (others => 'X');
 	    return mask_result;
 	end if;
@@ -564,10 +565,10 @@ architecture behaviour of fpu is
     begin
         reg.negative := fpr(63);
         reg.denorm := '0';
-        exp_nz := or (fpr(62 downto 52));
-        exp_ao := and (fpr(62 downto 52));
-        frac_nz := or (fpr(51 downto 0));
-        low_nz := or (fpr(31 downto 0));
+        exp_nz := or_reduce (fpr(62 downto 52));
+        exp_ao := and_reduce (fpr(62 downto 52));
+        frac_nz := or_reduce (fpr(51 downto 0));
+        low_nz := or_reduce (fpr(31 downto 0));
         if is_fp = '1' then
             reg.denorm := frac_nz and not exp_nz;
             reg.exponent := signed(resize(unsigned(fpr(62 downto 52)), EXP_BITS)) - to_signed(1023, EXP_BITS);
@@ -659,14 +660,14 @@ architecture behaviour of fpu is
         variable lsb : std_ulogic;
     begin
         if single_prec = '0' then
-            grx := mantissa(DP_GBIT downto DP_RBIT) & (x or (or mantissa(DP_RBIT - 1 downto 0)));
+            grx := mantissa(DP_GBIT downto DP_RBIT) & (x or (or_reduce(mantissa(DP_RBIT - 1 downto 0))));
             lsb := mantissa(DP_LSB);
         else
             grx := mantissa(SP_GBIT downto SP_RBIT) & x;
             lsb := mantissa(SP_LSB);
         end if;
         ret(1) := '0';
-        ret(0) := or (grx);
+        ret(0) := or_reduce (grx);
         case rn(1 downto 0) is
             when "00" =>        -- round to nearest
                 if grx = "100" and rn(2) = '0' then
@@ -755,7 +756,7 @@ begin
                 addrhi := "00";
             end if;
             addr := addrhi & r.b.mantissa(UNIT_BIT - 1 downto UNIT_BIT - 8);
-	    if is_X(addr) then
+	    if is_X(std_ulogic_vector(addr)) then
 		inverse_est <= (others => 'X');
 	    else
 		inverse_est <= '1' & inverse_table(to_integer(unsigned(addr)));
@@ -881,7 +882,7 @@ begin
             v.insn := e_in.insn;
             v.op := e_in.op;
             v.instr_tag := e_in.itag;
-            v.fe_mode := or (e_in.fe_mode);
+            v.fe_mode := or_reduce (e_in.fe_mode);
             v.dest_fpr := e_in.frt;
             v.single_prec := e_in.single;
             v.is_signed := e_in.is_signed;
@@ -985,10 +986,10 @@ begin
             v.a_lo := 56x"0";
         end if;
 
-        r_hi_nz <= or (r.r(UNIT_BIT + 1 downto SP_LSB));
-        r_lo_nz <= or (r.r(SP_LSB - 1 downto DP_LSB));
-        r_gt_1 <= or (r.r(63 downto 1));
-        s_nz <= or (r.s);
+        r_hi_nz <= or_reduce (r.r(UNIT_BIT + 1 downto SP_LSB));
+        r_lo_nz <= or_reduce (r.r(SP_LSB - 1 downto DP_LSB));
+        r_gt_1 <= or_reduce (r.r(63 downto 1));
+        s_nz <= or_reduce (r.s);
 
         if r.single_prec = '0' then
             if r.doing_ftdiv(1) = '0' then
@@ -1010,19 +1011,19 @@ begin
         new_exp := r.result_exp - r.shift;
         exp_tiny := '0';
         exp_huge := '0';
-	if is_X(new_exp) or is_X(min_exp) then
+	if is_X(std_ulogic_vector(new_exp)) or is_X(std_ulogic_vector(min_exp)) then
 	    exp_tiny := 'X';
         elsif new_exp < min_exp then
             exp_tiny := '1';
         end if;
-	if is_X(new_exp) or is_X(min_exp) then
+	if is_X(std_ulogic_vector(new_exp)) or is_X(std_ulogic_vector(min_exp)) then
 	    exp_huge := 'X';
 	elsif new_exp > max_exp then
             exp_huge := '1';
         end if;
 
         -- Compare P with zero and with B
-        px_nz := or (r.p(UNIT_BIT + 1 downto 4));
+        px_nz := or_reduce (r.p(UNIT_BIT + 1 downto 4));
         pcmpb_eq := '0';
         if r.p(59 downto 4) = r.b.mantissa(UNIT_BIT + 1 downto DP_RBIT) then
             pcmpb_eq := '1';
@@ -1909,7 +1910,7 @@ begin
                 elsif r.r(UNIT_BIT) = '1' then
                     set_x := '1';
                     v.state := ROUNDING;
-                elsif (r_hi_nz or r_lo_nz or (or (r.r(DP_LSB - 1 downto 0)))) = '0' then
+                elsif (r_hi_nz or r_lo_nz or (or_reduce (r.r(DP_LSB - 1 downto 0)))) = '0' then
                     -- r.x must be zero at this point
                     v.result_class := ZERO;
                     arith_done := '1';
@@ -2024,7 +2025,7 @@ begin
                 -- r.shift = UNIT_BIT (or 0, but only if r is now nonzero)
                 re_sel2 <= REXP2_NE;
                 rs_norm <= '1';
-                if (r.r(UNIT_BIT + 2) or r_hi_nz or r_lo_nz or (or (r.r(DP_LSB - 1 downto 0)))) = '0' then
+                if (r.r(UNIT_BIT + 2) or r_hi_nz or r_lo_nz or (or_reduce (r.r(DP_LSB - 1 downto 0)))) = '0' then
                     if s_nz = '0' then
                         -- must be a subtraction, and r.x must be zero
                         v.result_class := ZERO;
@@ -3248,7 +3249,7 @@ begin
         else
             mshift := r.shift;
         end if;
-	if is_X(mshift) then
+	if is_X(std_ulogic_vector(mshift)) then
 	    mask := (others => 'X');
         elsif mshift < to_signed(-64, EXP_BITS) then
             mask := (others => '1');
@@ -3267,7 +3268,7 @@ begin
             when others =>
                 in_a0 := r.c.mantissa;
         end case;
-        if (or (mask and in_a0)) = '1' and set_x = '1' then
+        if (or_reduce (mask and in_a0)) = '1' and set_x = '1' then
             v.x := '1';
         end if;
         if opsel_ainv = '1' then
@@ -3296,7 +3297,7 @@ begin
             in_b0 := not in_b0;
         end if;
         in_b <= in_b0;
-	if is_X(r.shift) then
+	if is_X(std_ulogic_vector(r.shift)) then
             shift_res := (others => 'X');
 	elsif r.shift >= to_signed(-64, EXP_BITS) and r.shift <= to_signed(63, EXP_BITS) then
             shift_res := shifter_64(r.r(63 downto 1) & (shiftin0 or r.r(0)) &
@@ -3305,7 +3306,7 @@ begin
         else
             shift_res := (others => '0');
         end if;
-        sum := std_ulogic_vector(unsigned(in_a) + unsigned(in_b) + carry_in);
+        sum := std_ulogic_vector(unsigned(in_a) + unsigned(in_b) + ("" & carry_in)); -- FIXME
         if opsel_mask = '1' then
             sum(DP_LSB - 1 downto 0) := "0000";
             if r.single_prec = '1' then
@@ -3378,7 +3379,7 @@ begin
         if set_s = '1' then
             case opsel_s is
                 when S_NEG =>
-                    v.s := std_ulogic_vector(unsigned(not r.s) + (not r.x));
+                    v.s := std_ulogic_vector(unsigned(not r.s) + ("" & (not r.x)));
                 when S_MULT =>
                     v.s := multiply_to_f.result(55 downto 0);
                 when S_SHIFT =>
@@ -3456,7 +3457,7 @@ begin
             rexp_in2 := not rexp_in2;
         end if;
         rexp_cin := re_neg1 or re_neg2;
-        rexp_sum := rexp_in1 + rexp_in2 + rexp_cin;
+        rexp_sum := rexp_in1 + rexp_in2 + ("" & rexp_cin); -- FIXME
         if re_set_result = '1' then
             v.result_exp := rexp_sum;
         end if;
@@ -3512,7 +3513,7 @@ begin
             -- do this as a separate dedicated 7-bit adder for timing reasons
             v.shift := resize(signed('0' & clz) - (63 - UNIT_BIT), EXP_BITS);
         else
-            v.shift := rsh_in1 + rsh_in2 + (rs_neg1 or rs_neg2);
+            v.shift := rsh_in1 + rsh_in2 + ("" & (rs_neg1 or rs_neg2));
         end if;
 
         if r.update_fprf = '1' then
@@ -3520,9 +3521,9 @@ begin
                                                              r.r(UNIT_BIT) and not r.denorm);
         end if;
 
-        v.fpscr(FPSCR_VX) := (or (v.fpscr(FPSCR_VXSNAN downto FPSCR_VXVC))) or
-                             (or (v.fpscr(FPSCR_VXSOFT downto FPSCR_VXCVI)));
-        v.fpscr(FPSCR_FEX) := or (v.fpscr(FPSCR_VX downto FPSCR_XX) and
+        v.fpscr(FPSCR_VX) := (or_reduce (v.fpscr(FPSCR_VXSNAN downto FPSCR_VXVC))) or
+                             (or_reduce (v.fpscr(FPSCR_VXSOFT downto FPSCR_VXCVI)));
+        v.fpscr(FPSCR_FEX) := or_reduce (v.fpscr(FPSCR_VX downto FPSCR_XX) and
                                   v.fpscr(FPSCR_VE downto FPSCR_XE));
         if update_fx = '1' and
             (v.fpscr(FPSCR_VX downto FPSCR_XX) and not r.old_exc) /= "00000" then

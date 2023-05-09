@@ -4,6 +4,7 @@ use ieee.numeric_std.all;
 
 library work;
 use work.common.all;
+use work.CommonDef.all;
 
 entity cr_file is
     generic (
@@ -62,7 +63,7 @@ begin
     begin
         if rising_edge(clk) then
             if w_in.write_cr_enable = '1' then
-                report "Writing " & to_hstring(w_in.write_cr_data) & " to CR mask " & to_hstring(w_in.write_cr_mask);
+                report "Writing " & get_hstring(w_in.write_cr_data) & " to CR mask " & get_hstring(w_in.write_cr_mask);
                 crs <= crs_updated;
             end if;
             if w_in.write_xerc_enable = '1' then
@@ -81,7 +82,7 @@ begin
     begin
         -- just return the entire CR to make mfcrf easier for now
         if d_in.read = '1' then
-            report "Reading CR " & to_hstring(crs_updated);
+            report "Reading CR " & get_hstring(crs_updated);
         end if;
         d_out.read_cr_data <= crs_updated;
         d_out.read_xerc_data <= xerc_updated;
@@ -92,7 +93,7 @@ begin
             variable xer : std_ulogic_vector(31 downto 0);
         begin
             if sim_dump = '1' then
-                report "CR 00000000" & to_hstring(crs);
+                report "CR 00000000" & get_hstring(crs);
                 xer := (others => '0');
                 xer(31) := xerc.so;
                 xer(30) := xerc.ov;
@@ -100,7 +101,7 @@ begin
                 xer(19) := xerc.ov32;
                 xer(18) := xerc.ca32;
                 xer(17 downto 0) := ctrl.xer_low;
-                report "XER 00000000" & to_hstring(xer);
+                report "XER 00000000" & get_hstring(xer);
                 assert false report "end of test" severity failure;
             end if;
         end process;

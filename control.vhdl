@@ -3,6 +3,7 @@ use ieee.std_logic_1164.all;
 
 library work;
 use work.common.all;
+use work.CommonDef.all;
 
 entity control is
     generic (
@@ -119,7 +120,7 @@ begin
                         tag_regs(i).wr_ov <= ov_write_valid;
                         tag_regs(i).valid <= '1';
                         if gpr_write_valid = '1' then
-                            report "tag " & integer'image(i) & " valid for gpr " & to_hstring(gpr_write_in);
+                            report "tag " & integer'image(i) & " valid for gpr " & get_hstring(std_ulogic_vector(gpr_write_in));
                         end if;
                     end if;
                 end if;
@@ -211,9 +212,9 @@ begin
         gpr_bypass_b <= byp_b;
         gpr_bypass_c <= byp_c;
 
-        gpr_tag_stall <= (tag_a.valid and not (or (byp_a))) or
-                         (tag_b.valid and not (or (byp_b))) or
-                         (tag_c.valid and not (or (byp_c)));
+        gpr_tag_stall <= (tag_a.valid and not or_reduce (byp_a)) or
+                         (tag_b.valid and not or_reduce (byp_b)) or
+                         (tag_c.valid and not or_reduce (byp_c));
 
         incr_tag := curr_tag;
         instr_tag.tag <= curr_tag;

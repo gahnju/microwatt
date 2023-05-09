@@ -5,6 +5,7 @@ use ieee.numeric_std.all;
 library work;
 use work.common.all;
 use work.decode_types.all;
+use work.CommonDef.all;
 
 entity divider is
     port (
@@ -74,7 +75,7 @@ begin
                     count <= count + 1;
                 elsif dend(128 downto 57) = x"000000000000000000" and count(6 downto 3) /= "0111" then
                     -- consume 8 bits of zeroes in one cycle
-                    ovf32 <= or (ovf32 & quot(31 downto 24));
+                    ovf32 <= or_reduce (ovf32 & quot(31 downto 24));
                     dend <= dend(120 downto 0) & x"00";
                     quot <= quot(55 downto 0) & x"00";
                     count <= count + 8;

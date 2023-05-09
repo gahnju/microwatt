@@ -91,6 +91,8 @@ architecture behaviour of sync_fifo is
 
     signal full, empty : std_ulogic;
     signal push, pop   : std_ulogic;
+    signal push_and_pop: std_ulogic_vector(1 downto 0);
+    
 begin
 
     -- Current state at last clock edge
@@ -108,11 +110,13 @@ begin
     -- Internal control signals
     push <= wr_ready and wr_valid;
     pop  <= rd_ready and rd_valid;
+    push_and_pop <= push & pop;
 
     -- Next state
     rd_next <= next_index(rd_idx) when pop  = '1' else rd_idx;
     wr_next <= next_index(wr_idx) when push = '1' else wr_idx;
-    with push & pop select op_next <=
+    
+    with (push_and_pop) select op_next <=
         OP_PUSH when "10",
         OP_POP  when "01",
         op_prev when others;

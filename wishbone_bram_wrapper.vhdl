@@ -11,7 +11,7 @@ use work.wishbone_types.all;
 entity wishbone_bram_wrapper is
     generic(
 	MEMORY_SIZE   : natural := 4096; --! Memory size in bytes.
-	RAM_INIT_FILE : string
+	RAM_INIT_FILE : string := "/afs/vlsilab.boeblingen.ibm.com/proj/ibmq/usr/gahejung/fusesoc_workspace/fusesoc_libraries/microwatt/hello_world/hello_world.bin"
 	);
     port(
 	clk : in std_logic;
@@ -33,8 +33,14 @@ architecture behaviour of wishbone_bram_wrapper is
 
     -- Others
     signal ack, ack_buf : std_ulogic;
+    
+    -- Type conversion
+    signal dout_conv : std_logic_vector(wishbone_data_bits-1 downto 0);
+    
 begin
 
+    dout_conv <= std_logic_vector(wishbone_out.dat);
+    
     -- Actual RAM template
     ram_0: entity work.main_bram
 	generic map(
@@ -46,15 +52,15 @@ begin
 	port map(
 	    clk => clk,
 	    addr => ram_addr,
-	    din  => wishbone_in.dat,
-	    dout => wishbone_out.dat,
-	    sel => wishbone_in.sel,
+	    din  => std_logic_vector(wishbone_in.dat),
+	    dout => dout_conv,
+	    sel => std_logic_vector(wishbone_in.sel),
 	    re => ram_re,
 	    we => ram_we
 	    );
 
     -- Wishbone interface
-    ram_addr <= wishbone_in.adr(ram_addr_bits - 1 downto 0);
+    ram_addr <= std_logic_vector(wishbone_in.adr(ram_addr_bits - 1 downto 0));
     ram_we <= wishbone_in.stb and wishbone_in.cyc and wishbone_in.we;
     ram_re <= wishbone_in.stb and wishbone_in.cyc and not wishbone_in.we;
     wishbone_out.stall <= '0';

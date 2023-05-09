@@ -31,8 +31,21 @@ architecture behaviour of multiply_32s is
     signal p0_pat, p0_patb : std_ulogic;
     signal p1_pat, p1_patb : std_ulogic;
     signal product_lo : std_ulogic_vector(22 downto 0);
+    
+    -- signals created to solve type conversion errors
+    signal m00_p_conv, m01_p_conv : std_logic_vector(47 downto 0);
+    signal m10_p_conv, m11_p_conv : std_logic_vector(47 downto 0);
+    signal m00_pc_conv : std_logic_vector(47 downto 0);
+    signal m10_pc_conv : std_logic_vector(47 downto 0);
 
 begin
+    m00_p_conv <= std_logic_vector(m00_p);
+    m01_p_conv <= std_logic_vector(m01_p);
+    m10_p_conv <= std_logic_vector(m10_p);
+    m11_p_conv <= std_logic_vector(m11_p);
+    m00_pc_conv <= std_logic_vector(m00_pc);
+    m10_pc_conv <= std_logic_vector(m10_pc);
+    
     -- sign extend if signed
     data1(31 downto 0)  <= m_in.data1(31 downto 0);
     data1(52 downto 32) <= (others => m_in.is_signed and m_in.data1(31));
@@ -57,10 +70,10 @@ begin
             PREG => 0
             )
         port map (
-            A => "0000000" & data1(22 downto 0),
+            A => std_logic_vector("0000000" & data1(22 downto 0)),
             ACIN => (others => '0'),
             ALUMODE => "0000",
-            B => '0' & data2(16 downto 0),
+            B => std_logic_vector('0' & data2(16 downto 0)),
             BCIN => (others => '0'),
             C => (others => '0'),
             CARRYCASCIN => '0',
@@ -84,9 +97,9 @@ begin
             INMODE => "00000",
             MULTSIGNIN => '0',
             OPMODE => "0110101",
-            P => m00_p,
+            P => m00_p_conv,
             PCIN => (others => '0'),
-            PCOUT => m00_pc,
+            PCOUT => m00_pc_conv,
             RSTA => '0',
             RSTALLCARRYIN => '0',
             RSTALUMODE => '0',
@@ -115,10 +128,10 @@ begin
             PREG => 0
             )
         port map (
-            A => "0000000" & data1(22 downto 0),
+            A => std_logic_vector("0000000" & data1(22 downto 0)),
             ACIN => (others => '0'),
             ALUMODE => "0000",
-            B => data2(34 downto 17),
+            B => std_logic_vector(data2(34 downto 17)),
             BCIN => (others => '0'),
             C => (others => '0'),
             CARRYCASCIN => '0',
@@ -142,8 +155,8 @@ begin
             INMODE => "00000",
             MULTSIGNIN => '0',
             OPMODE => "1010101",
-            P => m01_p,
-            PCIN => m00_pc,
+            P => m01_p_conv,
+            PCIN => m00_pc_conv,
             RSTA => '0',
             RSTALLCARRYIN => '0',
             RSTALUMODE => '0',
@@ -173,12 +186,12 @@ begin
             USE_PATTERN_DETECT => "PATDET"
             )
         port map (
-            A => data1(52 downto 23),
+            A => std_logic_vector(data1(52 downto 23)),
             ACIN => (others => '0'),
             ALUMODE => "0000",
-            B => '0' & data2(16 downto 0),
+            B => std_logic_vector('0' & data2(16 downto 0)),
             BCIN => (others => '0'),
-            C => std_ulogic_vector(resize(signed(m01_p(38 downto 6)), 48)),
+            C => std_logic_vector(resize(signed(m01_p(38 downto 6)), 48)),
             CARRYCASCIN => '0',
             CARRYIN => '0',
             CARRYINSEL => "000",
@@ -200,11 +213,11 @@ begin
             INMODE => "00000",
             MULTSIGNIN => '0',
             OPMODE => "0110101",
-            P => m10_p,
+            P => m10_p_conv,
             PATTERNDETECT => p0_pat,
             PATTERNBDETECT => p0_patb,
             PCIN => (others => '0'),
-            PCOUT => m10_pc,
+            PCOUT => m10_pc_conv,
             RSTA => '0',
             RSTALLCARRYIN => '0',
             RSTALUMODE => '0',
@@ -234,10 +247,10 @@ begin
             USE_PATTERN_DETECT => "PATDET"
             )
         port map (
-            A => data1(52 downto 23),
+            A => std_logic_vector(data1(52 downto 23)),
             ACIN => (others => '0'),
             ALUMODE => "0000",
-            B => data2(34 downto 17),
+            B => std_logic_vector(data2(34 downto 17)),
             BCIN => (others => '0'),
             C => (others => '0'),
             CARRYCASCIN => '0',
@@ -261,10 +274,10 @@ begin
             INMODE => "00000",
             MULTSIGNIN => '0',
             OPMODE => "1010101",
-            P => m11_p,
+            P => m11_p_conv,
             PATTERNDETECT => p1_pat,
             PATTERNBDETECT => p1_patb,
-            PCIN => m10_pc,
+            PCIN => m10_pc_conv,
             RSTA => '0',
             RSTALLCARRYIN => '0',
             RSTALUMODE => '0',

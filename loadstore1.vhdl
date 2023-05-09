@@ -7,6 +7,7 @@ use work.decode_types.all;
 use work.common.all;
 use work.insn_helpers.all;
 use work.helpers.all;
+use work.CommonDef.all;
 
 -- 2 cycle LSU
 -- We calculate the address in the first cycle
@@ -199,7 +200,7 @@ architecture behave of loadstore1 is
 	return std_ulogic_vector is
         variable longsel : std_ulogic_vector(15 downto 0);
     begin
-        if is_X(address) then
+        if is_X(std_ulogic_vector(address)) then
             longsel := (others => 'X');
             return longsel;
         else
@@ -371,8 +372,8 @@ begin
         begin
             frac := r3.ld_sp_data(22 downto 0);
             exp := unsigned(r3.ld_sp_data(30 downto 23));
-            exp_nz := or (r3.ld_sp_data(30 downto 23));
-            exp_ao := and (r3.ld_sp_data(30 downto 23));
+            exp_nz := or_reduce (r3.ld_sp_data(30 downto 23));
+            exp_ao := and_reduce (r3.ld_sp_data(30 downto 23));
             frac_shift := (others => '0');
             if exp_ao = '1' then
                 exp_dp := to_unsigned(2047, 11);    -- infinity or NaN
@@ -460,7 +461,7 @@ begin
         addr_mask := std_ulogic_vector(unsigned(l_in.length(2 downto 0)) - 1);
 
         -- Do length_to_sel and work out if we are doing 2 dwords
-        long_sel := xfer_data_sel(v.length, addr(2 downto 0));
+        long_sel := xfer_data_sel(std_logic_vector(v.length), std_logic_vector(addr(2 downto 0)));
         v.byte_sel := long_sel(7 downto 0);
         v.second_bytes := long_sel(15 downto 8);
         if long_sel(15 downto 8) /= "00000000" then
@@ -468,7 +469,7 @@ begin
         end if;
 
         -- check alignment for larx/stcx
-        misaligned := or (addr_mask and addr(2 downto 0));
+        misaligned := or_reduce (addr_mask and addr(2 downto 0));
         v.align_intr := l_in.reserve and misaligned;
 
         case l_in.op is
@@ -619,7 +620,7 @@ begin
         byte_offset := unsigned(r1.addr0(2 downto 0));
         for i in 0 to 7 loop
             k := (to_unsigned(i, 3) - byte_offset) xor r1.req.brev_mask;
-	    if is_X(k) then
+	    if is_X(std_ulogic_vector(k)) then
 		store_data(i * 8 + 7 downto i * 8) <= (others => 'X');
 	    else
 		j := to_integer(k) * 8;
@@ -755,7 +756,7 @@ begin
         -- load data formatting
         -- shift and byte-reverse data bytes
         for i in 0 to 7 loop
-	    if is_X(r2.byte_index(i)) then
+	    if is_X(std_ulogic_vector(r2.byte_index(i))) then
 		data_permuted(i * 8 + 7 downto i * 8) := (others => 'X');
 	    else
 		j := to_integer(r2.byte_index(i)) * 8;
@@ -781,7 +782,7 @@ begin
 
         -- trim and sign-extend
         for i in 0 to 7 loop
-	    if is_X(r2.req.length) then
+	    if is_X(std_ulogic_vector(r2.req.length)) then
 		trim_ctl(i) := "XX";
             elsif i < to_integer(unsigned(r2.req.length)) then
                 if r2.req.dword_index = '1' then
@@ -808,7 +809,7 @@ begin
         if HAS_FPU then
             -- Single-precision FP conversion for loads
             v.ld_sp_data := data_trimmed(31 downto 0);
-            v.ld_sp_nz := or (data_trimmed(22 downto 0));
+            v.ld_sp_nz := or_reduce (data_trimmed(22 downto 0));
             v.ld_sp_lz := count_left_zeroes(data_trimmed(22 downto 0));
         end if;
 

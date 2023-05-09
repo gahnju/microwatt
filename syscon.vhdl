@@ -222,11 +222,11 @@ begin
     regs_write: process(clk)
     begin
 	if rising_edge(clk) then
-	    if (rst) then
+	    if (rst='1') then
 		reg_ctrl <= (SYS_REG_CTRL_ALT_RESET => ctrl_init_alt_reset,
                         others => '0');
 	    else
-		if wishbone_in.cyc and wishbone_in.stb and wishbone_in.we then
+		if wishbone_in.cyc = '1' and wishbone_in.stb = '1' and wishbone_in.we = '1' then
                     -- Change this if CTRL ever has more than 32 bits
 		    if wishbone_in.adr(SYS_REG_BITS downto 1) = SYS_REG_CTRL and
                         wishbone_in.adr(0) = '0' then

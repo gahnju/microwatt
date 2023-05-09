@@ -4,6 +4,7 @@ use ieee.numeric_std.all;
 
 library work;
 use work.common.all;
+use work.CommonDef.all;
 
 entity fetch1 is
     generic(
@@ -74,7 +75,7 @@ begin
 		    " R:" & std_ulogic'image(w_in.redirect) & std_ulogic'image(d_in.redirect) &
 		    " S:" & std_ulogic'image(stall_in) &
 		    " T:" & std_ulogic'image(stop_in) &
-		    " nia:" & to_hstring(r_next.nia);
+		    " nia:" & get_hstring(r_next.nia);
 	    end if;
             if rst = '1' or w_in.redirect = '1' or d_in.redirect = '1' or stall_in = '0' then
                 r.virt_mode <= r_next.virt_mode;
@@ -124,7 +125,7 @@ begin
                 raddr := unsigned(r.nia(BTC_ADDR_BITS + 1 downto 2)) +
                          to_unsigned(2, BTC_ADDR_BITS);
                 if advance_nia = '1' then
-		    if is_X(raddr) then
+		    if is_X(std_ulogic_vector(raddr)) then
 			btc_rd_data <= (others => 'X');
 			btc_rd_valid <= 'X';
 		    else
@@ -160,9 +161,9 @@ begin
 
 	if rst = '1' then
 	    if alt_reset_in = '1' then
-		v.nia :=  ALT_RESET_ADDRESS;
+		v.nia :=  std_ulogic_vector(ALT_RESET_ADDRESS);
 	    else
-		v.nia :=  RESET_ADDRESS;
+		v.nia :=  std_ulogic_vector(RESET_ADDRESS);
 	    end if;
             v.virt_mode := '0';
             v.priv_mode := '1';

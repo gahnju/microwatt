@@ -184,10 +184,11 @@ architecture behaviour of soc is
     signal wb_syscon_out : wb_io_slave_out;
 
     -- UART0 signals:
-    signal wb_uart0_in   : wb_io_master_out;
-    signal wb_uart0_out  : wb_io_slave_out;
-    signal uart0_dat8    : std_ulogic_vector(7 downto 0);
-    signal uart0_irq     : std_ulogic;
+    signal wb_uart0_in     : wb_io_master_out;
+    signal wb_uart0_out    : wb_io_slave_out;
+    signal uart0_dat8      : std_ulogic_vector(7 downto 0);
+    signal uart0_irq       : std_ulogic;
+    signal uart0_dat8_conv : std_logic_vector(7 downto 0);
 
     -- UART1 signals:
     signal wb_uart1_in   : wb_io_master_out;
@@ -352,7 +353,7 @@ begin
             HAS_FPU => HAS_FPU,
             HAS_BTC => HAS_BTC,
 	    DISABLE_FLATTEN => DISABLE_FLATTEN_CORE,
-	    ALT_RESET_ADDRESS => ALT_RESET_ADDRESS,
+	    ALT_RESET_ADDRESS => std_ulogic_vector(ALT_RESET_ADDRESS),
             LOG_LENGTH => LOG_LENGTH,
             ICACHE_NUM_LINES => ICACHE_NUM_LINES,
             ICACHE_NUM_WAYS => ICACHE_NUM_WAYS,
@@ -499,7 +500,7 @@ begin
         if rising_edge(system_clk) then
             do_cyc := '0';
             end_cyc := '0';
-            if (soc_reset) then
+            if (soc_reset='1') then
                 state := IDLE;
                 wb_io_out.ack <= '0';
                 wb_io_out.stall <= '0';
@@ -776,7 +777,7 @@ begin
     -- Syscon slave
     syscon0: entity work.syscon
 	generic map(
-	    HAS_UART => true,
+	    HAS_UART => TRUE,
 	    HAS_DRAM => HAS_DRAM,
 	    BRAM_SIZE => MEMORY_SIZE,
 	    DRAM_SIZE => DRAM_SIZE,
@@ -805,6 +806,8 @@ begin
     --
     -- Either potato (legacy) or 16550
     --
+    uart0_dat8_conv <= std_logic_vector(uart0_dat8);
+    
     uart0_pp: if not UART0_IS_16550 generate
 	uart0: entity work.pp_soc_uart
 	    generic map(
@@ -816,9 +819,9 @@ begin
 		txd => uart0_txd,
 		rxd => uart0_rxd,
 		irq => uart0_irq,
-		wb_adr_in => wb_uart0_in.adr(9 downto 0) & "00",
-		wb_dat_in => wb_uart0_in.dat(7 downto 0),
-		wb_dat_out => uart0_dat8,
+		wb_adr_in => std_logic_vector(wb_uart0_in.adr(9 downto 0)) & "00",
+		wb_dat_in => std_logic_vector(wb_uart0_in.dat(7 downto 0)),
+		wb_dat_out => uart0_dat8_conv,
 		wb_cyc_in => wb_uart0_in.cyc,
 		wb_stb_in => wb_uart0_in.stb,
 		wb_we_in => wb_uart0_in.we,
@@ -1093,7 +1096,7 @@ begin
     wb_x_state: process(system_clk)
     begin
         if rising_edge(system_clk) then
-            if not soc_reset then
+            if not soc_reset = '1' then
                 -- Wishbone arbiter
                 assert not(is_x(wb_masters_out(0).cyc)) and not(is_x(wb_masters_out(0).stb)) severity failure;
                 assert not(is_x(wb_masters_out(1).cyc)) and not(is_x(wb_masters_out(1).stb)) severity failure;

@@ -6,6 +6,7 @@ library work;
 use work.common.all;
 use work.decode_types.all;
 use work.insn_helpers.all;
+use work.CommonDef.all;
 
 entity decode1 is
     generic (
@@ -499,8 +500,8 @@ begin
         decode_rom_addr <= icode;
 
         if f_in.valid = '1' then
-            report "Decode " & insn_code'image(icode) & " " & to_hstring(f_in.insn) &
-                " at " & to_hstring(f_in.nia);
+            report "Decode " & insn_code'image(icode) & " " & get_hstring(f_in.insn) &
+                " at " & get_hstring(f_in.nia);
         end if;
 
         -- Branch predictor

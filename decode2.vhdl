@@ -7,6 +7,7 @@ use work.decode_types.all;
 use work.common.all;
 use work.helpers.all;
 use work.insn_helpers.all;
+use work.CommonDef.all;
 
 entity decode2 is
     generic (
@@ -344,7 +345,7 @@ begin
                 dc2 <= reg_type_init;
             elsif deferred = '0' then
                 if dc2in.e.valid = '1' then
-                    report "execute " & to_hstring(dc2in.e.nia) &
+                    report "execute " & get_hstring(dc2in.e.nia) &
                         " tag=" & integer'image(dc2in.e.instr_tag.tag) & std_ulogic'image(dc2in.e.instr_tag.valid);
                 end if;
                 dc2 <= dc2in;

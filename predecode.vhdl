@@ -570,14 +570,14 @@ begin
             end if;
 
             -- Mark FP instructions as illegal if we don't have an FPU
-            if not HAS_FPU and not is_X(icode) and
+            if not HAS_FPU and not is_X(std_ulogic_vector(icode)) and
                 to_integer(icode) >= insn_code'pos(INSN_first_frs) then
                 illegal := '1';
             end if;
 
             ici(31 downto 0) := iword;
             ici(IOUT_LEN - 1 downto 32) := (others => '0');
-            if valid = '0' or illegal = '1' or is_X(icode) or
+            if valid = '0' or illegal = '1' or is_X(std_ulogic_vector(icode)) or
                 icode = to_unsigned(insn_code'pos(INSN_illegal), ICODE_LEN) then
                 -- Since an insn_code currently fits in 9 bits, use just
                 -- the most significant bit of ici to indicate illegal insns.

@@ -4,6 +4,7 @@ use ieee.numeric_std.all;
 
 library work;
 use work.common.all;
+use work.CommonDef.all;
 
 entity rotator is
     port (rs: in std_ulogic_vector(63 downto 0);
@@ -185,7 +186,7 @@ begin
 
         -- Generate carry output for arithmetic shift right of negative value
         if output_mode = "11" then
-            carry_out <= or (rs and not ml);
+            carry_out <= or_reduce(rs and not ml);
         else
             carry_out <= '0';
         end if;

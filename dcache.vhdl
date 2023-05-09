@@ -11,6 +11,7 @@ use work.utils.all;
 use work.common.all;
 use work.helpers.all;
 use work.wishbone_types.all;
+use work.CommonDef.all;
 
 entity dcache is
     generic (
@@ -497,7 +498,7 @@ architecture rtl of dcache is
     -- Get the tag value from the address
     function get_tag(addr: std_ulogic_vector) return cache_tag_t is
     begin
-        return addr(REAL_ADDR_BITS - 1 downto SET_SIZE_BITS);
+        return std_logic_vector(addr(REAL_ADDR_BITS - 1 downto SET_SIZE_BITS));
     end;
 
     -- Read a tag from a tag memory row
@@ -673,7 +674,7 @@ begin
         process(all)
         begin
             -- Read PLRU bits from array
-            if is_X(r1.tlb_hit_index) then
+            if is_X(std_ulogic_vector(r1.tlb_hit_index)) then
                 tlb_plru_cur <= (others => 'X');
             else
                 tlb_plru_cur <= tlb_plru_ram(to_integer(r1.tlb_hit_index));
@@ -689,7 +690,7 @@ begin
         begin
             if rising_edge(clk) then
                 if r1.tlb_hit = '1' then
-                    assert not is_X(r1.tlb_hit_index) severity failure;
+                    assert not is_X(std_ulogic_vector(r1.tlb_hit_index)) severity failure;
                     tlb_plru_ram(to_integer(r1.tlb_hit_index)) <= tlb_plru_upd;
                 end if;
             end if;
@@ -753,12 +754,12 @@ begin
                 end loop;
             elsif tlbie = '1' then
                 if tlb_hit = '1' then
-                    assert not is_X(tlb_req_index);
-                    assert not is_X(tlb_hit_way);
+                    assert not is_X(std_ulogic_vector(tlb_req_index));
+                    assert not is_X(std_ulogic_vector(tlb_hit_way));
                     dtlb_valids(to_integer(tlb_req_index))(to_integer(tlb_hit_way)) <= '0';
                 end if;
             elsif tlbwe = '1' then
-                assert not is_X(tlb_req_index);
+                assert not is_X(std_ulogic_vector(tlb_req_index));
                 repl_way := to_unsigned(0, TLB_WAY_BITS);
                 if TLB_NUM_WAYS > 1 then
                     if tlb_hit = '1' then
@@ -766,7 +767,7 @@ begin
                     else
                         repl_way := unsigned(r1.tlb_victim);
                     end if;
-                    assert not is_X(repl_way);
+                    assert not is_X(std_ulogic_vector(repl_way));
                 end if;
                 eatag := r0.req.addr(63 downto TLB_LG_PGSZ + TLB_SET_BITS);
                 tagset := tlb_tag_way;
@@ -803,7 +804,7 @@ begin
         process(all)
         begin
             -- Read PLRU bits from array
-            if is_X(r1.hit_index) then
+            if is_X(std_ulogic_vector(r1.hit_index)) then
                 plru_cur <= (others => 'X');
             else
                 plru_cur <= plru_ram(to_integer(r1.hit_index));
@@ -822,9 +823,9 @@ begin
                 -- an entry. The PLRU update will be "visible" on the next cycle
                 -- so the victim selection will correctly see the *old* value.
                 if r1.cache_hit = '1' or r1.choose_victim = '1' then
-                    report "PLRU update, index=" & to_hstring(r1.hit_index) &
-                        " way=" & to_hstring(r1.hit_way);
-                    assert not is_X(r1.hit_index) severity failure;
+                    report "PLRU update, index=" & get_hstring(std_ulogic_vector(r1.hit_index)) &
+                        " way=" & get_hstring(std_ulogic_vector(r1.hit_way));
+                    assert not is_X(std_ulogic_vector(r1.hit_index)) severity failure;
                     plru_ram(to_integer(r1.hit_index)) <= plru_upd;
                 end if;
             end if;
@@ -866,7 +867,7 @@ begin
                 if (snoop_in.cyc and snoop_in.stb and snoop_in.we) = '1' then
                     snoop_valid <= '1';
                     addr := addr_to_real(wb_to_addr(snoop_in.adr));
-                    assert not is_X(addr);
+                    assert not is_X(std_ulogic_vector(addr));
                     snoop_tag_set <= cache_tags(to_integer(get_index(addr)));
                     snoop_wrtag <= get_tag(addr);
                     snoop_index <= get_index(addr);
@@ -907,7 +908,7 @@ begin
             go := '0';
         end if;
         if go = '1' then
-            assert not is_X(r1.forward_tag);
+            assert not is_X(std_ulogic_vector(r1.forward_tag));
         end if;
 
 	-- Test if pending request is a hit on any way
@@ -929,7 +930,7 @@ begin
                         r0.req.addr(TLB_LG_PGSZ - 1 downto 0);
                 s_tag := get_tag(s_ra);
                 if go = '1' then
-                    assert not is_X(s_tag);
+                    assert not is_X(std_ulogic_vector(s_tag));
                 end if;
                 for i in 0 to NUM_WAYS-1 loop
                     if go = '1' and cache_valids(to_integer(rindex))(i) = '1' and
@@ -940,7 +941,7 @@ begin
                     end if;
                 end loop;
                 hit_set(j) := s_hit;
-                if go = '1' and not is_X(r1.reload_tag) and s_tag = r1.reload_tag then
+                if go = '1' and not is_X(std_ulogic_vector(r1.reload_tag)) and s_tag = r1.reload_tag then
                     rel_matches(j) := '1';
                 end if;
                 if go = '1' and s_tag = r1.forward_tag then
@@ -948,7 +949,7 @@ begin
                 end if;
             end loop;
             if tlb_hit = '1' and go = '1' then
-                assert not is_X(tlb_hit_way);
+                assert not is_X(std_ulogic_vector(tlb_hit_way));
                 is_hit := hit_set(to_integer(tlb_hit_way));
                 hit_way := hit_way_set(to_integer(tlb_hit_way));
                 rel_match := rel_matches(to_integer(tlb_hit_way));
@@ -957,7 +958,7 @@ begin
         else
             s_tag := get_tag(r0.req.addr);
             if go = '1' then
-                assert not is_X(s_tag);
+                assert not is_X(std_ulogic_vector(s_tag));
             end if;
             for i in 0 to NUM_WAYS-1 loop
                 if go = '1' and cache_valids(to_integer(rindex))(i) = '1' and
@@ -966,7 +967,7 @@ begin
                     is_hit := '1';
                 end if;
             end loop;
-            if go = '1' and not is_X(r1.reload_tag) and s_tag = r1.reload_tag then
+            if go = '1' and not is_X(std_ulogic_vector(r1.reload_tag)) and s_tag = r1.reload_tag then
                 rel_match := '1';
             end if;
             if go = '1' and s_tag = r1.forward_tag then
@@ -980,8 +981,8 @@ begin
         use_forward_st <= '0';
         use_forward_rl <= '0';
         if rel_match = '1' then
-            assert not is_X(r1.store_row);
-            assert not is_X(req_row);
+            assert not is_X(std_ulogic_vector(r1.store_row));
+            assert not is_X(std_ulogic_vector(req_row));
         end if;
         if rel_match = '1' and r1.store_row = req_row then
             -- Use the forwarding path if this cycle is a write to this row
@@ -992,11 +993,11 @@ begin
         end if;
         use_forward2 <= '0';
         if fwd_match = '1' then
-            assert not is_X(r1.forward_row);
-            if is_X(req_row) then
-                report "req_row=" & to_hstring(req_row) & " addr=" & to_hstring(r0.req.addr) & " go=" & std_ulogic'image(go);
+            assert not is_X(std_ulogic_vector(r1.forward_row));
+            if is_X(std_ulogic_vector(req_row)) then
+                report "req_row=" & get_hstring(std_ulogic_vector(req_row)) & " addr=" & get_hstring(std_ulogic_vector(r0.req.addr)) & " go=" & std_ulogic'image(go);
             end if;
-            assert not is_X(req_row);
+            assert not is_X(std_ulogic_vector(req_row));
         end if;
         if fwd_match = '1' and r1.forward_row = req_row then
             use_forward2 <= r1.forward_valid;
@@ -1020,8 +1021,8 @@ begin
 
         -- See if the request matches the line currently being reloaded
         if r1.state = RELOAD_WAIT_ACK and rel_match = '1' then
-            assert not is_X(rindex);
-            assert not is_X(r1.store_index);
+            assert not is_X(std_ulogic_vector(rindex));
+            assert not is_X(std_ulogic_vector(r1.store_index));
         end if;
         if r1.state = RELOAD_WAIT_ACK and rel_match = '1' and
             rindex = r1.store_index then
@@ -1171,7 +1172,7 @@ begin
             -- Request came from loadstore1...
             -- Load hit case is the standard path
             if r1.hit_load_valid = '1' then
-                report "completing load hit data=" & to_hstring(r1.data_out);
+                report "completing load hit data=" & get_hstring(r1.data_out);
             end if;
 
             -- error cases complete without stalling
@@ -1181,13 +1182,13 @@ begin
 
             -- Slow ops (load miss, NC, stores)
             if r1.slow_valid = '1' then
-                report "completing store or load miss data=" & to_hstring(r1.data_out);
+                report "completing store or load miss data=" & get_hstring(r1.data_out);
             end if;
 
         else
             -- Request came from MMU
             if r1.hit_load_valid = '1' then
-                report "completing load hit to MMU, data=" & to_hstring(m_out.data);
+                report "completing load hit to MMU, data=" & get_hstring(m_out.data);
             end if;
 
             -- error cases complete without stalling
@@ -1197,7 +1198,7 @@ begin
 
             -- Slow ops (i.e. load miss)
             if r1.slow_valid = '1' then
-                report "completing MMU load miss, data=" & to_hstring(m_out.data);
+                report "completing MMU load miss, data=" & get_hstring(m_out.data);
             end if;
         end if;
 
@@ -1228,7 +1229,12 @@ begin
 	signal wr_sel   : std_ulogic_vector(ROW_SIZE-1 downto 0);
 	signal wr_sel_m : std_ulogic_vector(ROW_SIZE-1 downto 0);
 	signal dout     : cache_row_t;
+	signal dout_conv : std_logic_vector(wishbone_data_bits-1 downto 0);
+	
     begin
+    
+    dout_conv <= std_logic_vector(dout);
+    
 	way: entity work.cache_ram
 	    generic map (
 		ROW_BITS => ROW_BITS,
@@ -1238,11 +1244,11 @@ begin
 	    port map (
 		clk     => clk,
 		rd_en   => do_read,
-		rd_addr => rd_addr,
-		rd_data => dout,
-		wr_sel  => wr_sel_m,
-		wr_addr => wr_addr,
-		wr_data => ram_wr_data
+		rd_addr => std_logic_vector(rd_addr),
+		rd_data => dout_conv,
+		wr_sel  => std_logic_vector(wr_sel_m),
+		wr_addr => std_logic_vector(wr_addr),
+		wr_data => std_logic_vector(ram_wr_data)
 		);
 	process(all)
 	begin
@@ -1263,7 +1269,7 @@ begin
             wr_sel_m <= (others => '0');
             if r1.write_bram = '1' or
                 (r1.state = RELOAD_WAIT_ACK and wishbone_in.ack = '1') then
-                assert not is_X(replace_way);
+                assert not is_X(std_ulogic_vector(replace_way));
                 if to_unsigned(i, WAY_BITS) = replace_way then
                     wr_sel_m <= ram_wr_select;
                 end if;
@@ -1284,11 +1290,11 @@ begin
         if rising_edge(clk) then
             if req_op /= OP_NONE then
                 report "op:" & op_t'image(req_op) &
-                    " addr:" & to_hstring(r0.req.addr) &
+                    " addr:" & get_hstring(r0.req.addr) &
                     " nc:" & std_ulogic'image(r0.req.nc) &
-                    " idx:" & to_hstring(req_index) &
-                    " tag:" & to_hstring(req_tag) &
-                    " way: " & to_hstring(req_hit_way);
+                    " idx:" & get_hstring(std_ulogic_vector(req_index)) &
+                    " tag:" & get_hstring(std_ulogic_vector(req_tag)) &
+                    " way: " & get_hstring(std_ulogic_vector(req_hit_way));
             end if;
             if r0_valid = '1' then
                 r1.mmu_req <= r0.mmu_req;
@@ -1317,7 +1323,7 @@ begin
                     when "10" =>
                         data_out(j + 7 downto j) := r1.forward_data(j + 7 downto j);
                     when others =>
-                        if is_X(req_hit_way) then
+                        if is_X(std_ulogic_vector(req_hit_way)) then
                             data_out(j + 7 downto j) := (others => 'X');
                         else
                             data_out(j + 7 downto j) := cache_out(to_integer(req_hit_way))(j + 7 downto j);
@@ -1437,20 +1443,20 @@ begin
 
                 -- Do invalidations from snooped stores to memory
                 if snoop_valid = '1' then
-                    assert not is_X(snoop_tag_set);
-                    assert not is_X(snoop_wrtag);
+                    assert not is_X(std_ulogic_vector(snoop_tag_set));
+                    assert not is_X(std_ulogic_vector(snoop_wrtag));
                 end if;
                 for i in 0 to NUM_WAYS-1 loop
                     if snoop_valid = '1' and read_tag(i, snoop_tag_set) = snoop_wrtag then
-                        assert not is_X(snoop_index);
+                        assert not is_X(std_ulogic_vector(snoop_index));
                         cache_valids(to_integer(snoop_index))(i) <= '0';
                     end if;
                 end loop;
 
                 if r1.write_tag = '1' then
                     -- Store new tag in selected way
-                    assert not is_X(r1.store_index);
-                    assert not is_X(replace_way);
+                    assert not is_X(std_ulogic_vector(r1.store_index));
+                    assert not is_X(std_ulogic_vector(replace_way));
                     for i in 0 to NUM_WAYS-1 loop
                         if to_unsigned(i, WAY_BITS) = replace_way then
                             cache_tags(to_integer(r1.store_index))((i + 1) * TAG_WIDTH - 1 downto i * TAG_WIDTH) <=
@@ -1503,7 +1509,7 @@ begin
                 -- Record victim way in the cycle after we see a load or dcbz miss
                 if r1.choose_victim = '1' then
                     r1.victim_way <= plru_victim;
-                    report "victim way:" & to_hstring(plru_victim);
+                    report "victim way:" & get_hstring(std_ulogic_vector(plru_victim));
                 end if;
                 if req_op = OP_LOAD_MISS or (req_op = OP_STORE_MISS and r0.req.dcbz = '1') then
                     r1.choose_victim <= '1';
@@ -1540,9 +1546,9 @@ begin
                     when OP_LOAD_MISS =>
 			-- Normal load cache miss, start the reload machine
 			--
-			report "cache miss real addr:" & to_hstring(req.real_addr) &
-			    " idx:" & to_hstring(get_index(req.real_addr)) &
-			    " tag:" & to_hstring(get_tag(req.real_addr));
+			report "cache miss real addr:" & get_hstring(req.real_addr) &
+			    " idx:" & get_hstring(std_ulogic_vector(get_index(req.real_addr))) &
+			    " tag:" & get_hstring(std_ulogic_vector(get_tag(req.real_addr)));
 
 			-- Start the wishbone cycle
 			r1.wb.we  <= '0';
@@ -1600,8 +1606,8 @@ begin
 		    -- If we are still sending requests, was one accepted ?
                     if wishbone_in.stall = '0' and r1.wb.stb = '1' then
 			-- That was the last word ? We are done sending. Clear stb.
-                        assert not is_X(r1.wb.adr);
-                        assert not is_X(r1.end_row_ix);
+                        assert not is_X(std_ulogic_vector(r1.wb.adr));
+                        assert not is_X(std_ulogic_vector(r1.end_row_ix));
 			if is_last_row_wb_addr(r1.wb.adr, r1.end_row_ix) then
 			    r1.wb.stb <= '0';
 			end if;
@@ -1620,8 +1626,8 @@ begin
                         -- (Cases where req comes from r0 are handled as a load
                         -- hit.)
                         if r1.full = '1' then
-                            assert not is_X(r1.store_row);
-                            assert not is_X(r1.req.real_addr);
+                            assert not is_X(std_ulogic_vector(r1.store_row));
+                            assert not is_X(std_ulogic_vector(r1.req.real_addr));
                         end if;
 			if r1.full = '1' and r1.req.same_tag = '1' and
                             ((r1.dcbz = '1' and req.dcbz = '1') or r1.req.op = OP_LOAD_MISS) and
@@ -1636,15 +1642,15 @@ begin
 			end if;
 
 			-- Check for completion
-                        assert not is_X(r1.store_row);
-                        assert not is_X(r1.end_row_ix);
+                        assert not is_X(std_ulogic_vector(r1.store_row));
+                        assert not is_X(std_ulogic_vector(r1.end_row_ix));
 			if is_last_row(r1.store_row, r1.end_row_ix) then
 			    -- Complete wishbone cycle
 			    r1.wb.cyc <= '0';
 
 			    -- Cache line is now valid
-                            assert not is_X(r1.store_index);
-                            assert not is_X(r1.store_way);
+                            assert not is_X(std_ulogic_vector(r1.store_index));
+                            assert not is_X(std_ulogic_vector(r1.store_way));
 			    cache_valids(to_integer(r1.store_index))(to_integer(r1.store_way)) <= '1';
 
                             ev.dcache_refill <= not r1.dcbz;
@@ -1676,7 +1682,7 @@ begin
                             r1.wb.dat <= req.data;
                             r1.wb.sel <= req.byte_sel;
                         end if;
-                        assert not is_X(acks);
+                        assert not is_X(std_ulogic_vector(acks));
                         if acks < 7 and req.same_tag = '1' and req.dcbz = '0' and
                             (req.op = OP_STORE_MISS or req.op = OP_STORE_HIT) then
                             r1.wb.stb <= '1';
@@ -1700,7 +1706,7 @@ begin
 
 		    -- Got ack ? See if complete.
 		    if wishbone_in.ack = '1' then
-                        assert not is_X(acks);
+                        assert not is_X(std_ulogic_vector(acks));
                         if stbs_done and acks = 1 then
                             r1.state <= IDLE;
                             r1.wb.cyc <= '0';

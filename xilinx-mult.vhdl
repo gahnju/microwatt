@@ -39,12 +39,48 @@ architecture behaviour of multiply is
     signal rnot_1 : std_ulogic;
     signal valid_1 : std_ulogic;
     signal overflow : std_ulogic;
+    
+    -- signals created to solve type conversion errors
+    signal m00_p_conv, m01_p_conv, m02_p_conv, m03_p_conv : std_logic_vector(47 downto 0);
+    signal m10_p_conv, m11_p_conv, m12_p_conv, m13_p_conv : std_logic_vector(47 downto 0);
+    signal m20_p_conv, m21_p_conv, m22_p_conv, m23_p_conv : std_logic_vector(47 downto 0);
+    signal m00_pc_conv, m02_pc_conv, m20_pc_conv, m22_pc_conv : std_logic_vector(47 downto 0);
+    signal m10_pc_conv, m12_pc_conv: std_logic_vector(47 downto 0);
+    signal s0_carry_conv, p0_carry_conv : std_logic_vector(3 downto 0);
+    signal s0_pc_conv, s1_pc_conv : std_logic_vector(47 downto 0);
+    signal product_conv : std_logic_vector(127 downto 0);
+    
 
 begin
     addend <= m_in.addend when m_in.subtract = '0' else not m_in.addend;
     d1sign <= (others => m_in.data1(63) and m_in.is_signed);
     d2sign <= (others => m_in.data2(63) and m_in.is_signed);
-
+    
+    m00_p_conv <= std_logic_vector(m01_p);
+    m01_p_conv <= std_logic_vector(m01_p);
+    m02_p_conv <= std_logic_vector(m02_p);
+    m03_p_conv <= std_logic_vector(m03_p);
+    m10_p_conv <= std_logic_vector(m10_p);
+    m11_p_conv <= std_logic_vector(m11_p);
+    m12_p_conv <= std_logic_vector(m12_p);
+    m13_p_conv <= std_logic_vector(m13_p);
+    m20_p_conv <= std_logic_vector(m20_p);
+    m21_p_conv <= std_logic_vector(m21_p);
+    m22_p_conv <= std_logic_vector(m22_p);
+    m23_p_conv <= std_logic_vector(m23_p);
+    m00_pc_conv <= std_logic_vector(m00_pc);
+    m02_pc_conv <= std_logic_vector(m02_pc);
+    m10_pc_conv <= std_logic_vector(m10_pc);
+    m12_pc_conv  <= std_logic_vector(m12_pc);
+    m20_pc_conv <= std_logic_vector(m20_pc);
+    m22_pc_conv  <= std_logic_vector(m22_pc);
+    s0_carry_conv <= std_logic_vector(s0_carry);
+    p0_carry_conv <= std_logic_vector(p0_carry);
+    s0_pc_conv <= std_logic_vector(s0_pc);
+    s1_pc_conv <= std_logic_vector(s1_pc);
+    product_conv <= std_logic_vector(product);
+    
+   
     m00: DSP48E1
         generic map (
             ACASCREG => 0,
@@ -61,12 +97,12 @@ begin
             PREG => 1
             )
         port map (
-            A => 6x"0" & m_in.data1(23 downto 0),
+            A => std_logic_vector(6x"0" & m_in.data1(23 downto 0)),
             ACIN => (others => '0'),
             ALUMODE => "0000",
-            B => '0' & m_in.data2(16 downto 0),
+            B => std_logic_vector('0' & m_in.data2(16 downto 0)),
             BCIN => (others => '0'),
-            C => 14x"0" & addend(33 downto 0),
+            C => std_logic_vector(14x"0" & addend(33 downto 0)),
             CARRYCASCIN => '0',
             CARRYIN => '0',
             CARRYINSEL => "000",
@@ -88,9 +124,9 @@ begin
             INMODE => "00000",
             MULTSIGNIN => '0',
             OPMODE => "0110101",
-            P => m00_p,
+            P => m00_p_conv,
             PCIN => (others => '0'),
-            PCOUT => m00_pc,
+            PCOUT => m00_pc_conv,
             RSTA => '0',
             RSTALLCARRYIN => '0',
             RSTALUMODE => '0',
@@ -119,10 +155,10 @@ begin
             PREG => 0
             )
         port map (
-            A => 6x"0" & m_in.data1(23 downto 0),
+            A => std_logic_vector(6x"0" & m_in.data1(23 downto 0)),
             ACIN => (others => '0'),
             ALUMODE => "0000",
-            B => '0' & m_in.data2(33 downto 17),
+            B => std_logic_vector('0' & m_in.data2(33 downto 17)),
             BCIN => (others => '0'),
             C => (others => '0'),
             CARRYCASCIN => '0',
@@ -146,8 +182,8 @@ begin
             INMODE => "00000",
             MULTSIGNIN => '0',
             OPMODE => "1010101",
-            P => m01_p,
-            PCIN => m00_pc,
+            P => m01_p_conv,
+            PCIN => m00_pc_conv,
             RSTA => '0',
             RSTALLCARRYIN => '0',
             RSTALUMODE => '0',
@@ -176,12 +212,12 @@ begin
             PREG => 1
             )
         port map (
-            A => 6x"0" & m_in.data1(23 downto 0),
+            A => std_logic_vector(6x"0" & m_in.data1(23 downto 0)),
             ACIN => (others => '0'),
             ALUMODE => "0000",
-            B => '0' & m_in.data2(50 downto 34),
+            B => std_logic_vector('0' & m_in.data2(50 downto 34)),
             BCIN => (others => '0'),
-            C => 24x"0" & addend(57 downto 34),
+            C => std_logic_vector(24x"0" & addend(57 downto 34)),
             CARRYCASCIN => '0',
             CARRYIN => '0',
             CARRYINSEL => "000",
@@ -203,9 +239,9 @@ begin
             INMODE => "00000",
             MULTSIGNIN => '0',
             OPMODE => "0110101",
-            P => m02_p,
+            P => m02_p_conv,
             PCIN => (others => '0'),
-            PCOUT => m02_pc,
+            PCOUT => m02_pc_conv,
             RSTA => '0',
             RSTALLCARRYIN => '0',
             RSTALUMODE => '0',
@@ -234,10 +270,10 @@ begin
             PREG => 0
             )
         port map (
-            A => 6x"0" & m_in.data1(23 downto 0),
+            A => std_logic_vector(6x"0" & m_in.data1(23 downto 0)),
             ACIN => (others => '0'),
             ALUMODE => "0000",
-            B => d2sign & m_in.data2(63 downto 51),
+            B => std_logic_vector(d2sign & m_in.data2(63 downto 51)),
             BCIN => (others => '0'),
             C => (others => '0'),
             CARRYCASCIN => '0',
@@ -261,8 +297,8 @@ begin
             INMODE => "00000",
             MULTSIGNIN => '0',
             OPMODE => "1010101",
-            P => m03_p,
-            PCIN => m02_pc,
+            P => m03_p_conv,
+            PCIN => m02_pc_conv,
             RSTA => '0',
             RSTALLCARRYIN => '0',
             RSTALUMODE => '0',
@@ -291,10 +327,10 @@ begin
             PREG => 1
             )
         port map (
-            A => 6x"0" & m_in.data1(47 downto 24),
+            A => std_logic_vector(6x"0" & m_in.data1(47 downto 24)),
             ACIN => (others => '0'),
             ALUMODE => "0000",
-            B => '0' & m_in.data2(16 downto 0),
+            B => std_logic_vector('0' & m_in.data2(16 downto 0)),
             BCIN => (others => '0'),
             C => (others => '0'),
             CARRYCASCIN => '0',
@@ -318,9 +354,9 @@ begin
             INMODE => "00000",
             MULTSIGNIN => '0',
             OPMODE => "0000101",
-            P => m10_p,
+            P => m10_p_conv,
             PCIN => (others => '0'),
-            PCOUT => m10_pc,
+            PCOUT => m10_pc_conv,
             RSTA => '0',
             RSTALLCARRYIN => '0',
             RSTALUMODE => '0',
@@ -349,10 +385,10 @@ begin
             PREG => 0
             )
         port map (
-            A => 6x"0" & m_in.data1(47 downto 24),
+            A => std_logic_vector(6x"0" & m_in.data1(47 downto 24)),
             ACIN => (others => '0'),
             ALUMODE => "0000",
-            B => '0' & m_in.data2(33 downto 17),
+            B => std_logic_vector('0' & m_in.data2(33 downto 17)),
             BCIN => (others => '0'),
             C => (others => '0'),
             CARRYCASCIN => '0',
@@ -376,8 +412,8 @@ begin
             INMODE => "00000",
             MULTSIGNIN => '0',
             OPMODE => "1010101",
-            P => m11_p,
-            PCIN => m10_pc,
+            P => m11_p_conv,
+            PCIN => m10_pc_conv,
             RSTA => '0',
             RSTALLCARRYIN => '0',
             RSTALUMODE => '0',
@@ -406,12 +442,12 @@ begin
             PREG => 1
             )
         port map (
-            A => 6x"0" & m_in.data1(47 downto 24),
+            A => std_logic_vector(6x"0" & m_in.data1(47 downto 24)),
             ACIN => (others => '0'),
             ALUMODE => "0000",
-            B => '0' & m_in.data2(50 downto 34),
+            B => std_logic_vector('0' & m_in.data2(50 downto 34)),
             BCIN => (others => '0'),
-            C => 24x"0" & addend(81 downto 58),
+            C => 24x"0" & std_logic_vector(addend(81 downto 58)),
             CARRYCASCIN => '0',
             CARRYIN => '0',
             CARRYINSEL => "000",
@@ -433,9 +469,9 @@ begin
             INMODE => "00000",
             MULTSIGNIN => '0',
             OPMODE => "0110101",
-            P => m12_p,
+            P => m12_p_conv,
             PCIN => (others => '0'),
-            PCOUT => m12_pc,
+            PCOUT => m12_pc_conv,
             RSTA => '0',
             RSTALLCARRYIN => '0',
             RSTALUMODE => '0',
@@ -464,10 +500,10 @@ begin
             PREG => 0
             )
         port map (
-            A => 6x"0" & m_in.data1(47 downto 24),
+            A => std_logic_vector(6x"0" & m_in.data1(47 downto 24)),
             ACIN => (others => '0'),
             ALUMODE => "0000",
-            B => d2sign & m_in.data2(63 downto 51),
+            B => std_logic_vector(d2sign & m_in.data2(63 downto 51)),
             BCIN => (others => '0'),
             C => (others => '0'),
             CARRYCASCIN => '0',
@@ -491,8 +527,8 @@ begin
             INMODE => "00000",
             MULTSIGNIN => '0',
             OPMODE => "1010101",
-            P => m13_p,
-            PCIN => m12_pc,
+            P => m13_p_conv,
+            PCIN => m12_pc_conv,
             RSTA => '0',
             RSTALLCARRYIN => '0',
             RSTALUMODE => '0',
@@ -521,10 +557,10 @@ begin
             PREG => 1
             )
         port map (
-            A => d1sign & m_in.data1(63 downto 48),
+            A => std_logic_vector(d1sign & m_in.data1(63 downto 48)),
             ACIN => (others => '0'),
             ALUMODE => "0000",
-            B => '0' & m_in.data2(16 downto 0),
+            B => std_logic_vector('0' & m_in.data2(16 downto 0)),
             BCIN => (others => '0'),
             C => (others => '0'),
             CARRYCASCIN => '0',
@@ -548,9 +584,9 @@ begin
             INMODE => "00000",
             MULTSIGNIN => '0',
             OPMODE => "0000101",
-            P => m20_p,
+            P => m20_p_conv,
             PCIN => (others => '0'),
-            PCOUT => m20_pc,
+            PCOUT => m20_pc_conv,
             RSTA => '0',
             RSTALLCARRYIN => '0',
             RSTALUMODE => '0',
@@ -579,10 +615,10 @@ begin
             PREG => 0
             )
         port map (
-            A => d1sign & m_in.data1(63 downto 48),
+            A => std_logic_vector(d1sign & m_in.data1(63 downto 48)),
             ACIN => (others => '0'),
             ALUMODE => "0000",
-            B => '0' & m_in.data2(33 downto 17),
+            B => std_logic_vector('0' & m_in.data2(33 downto 17)),
             BCIN => (others => '0'),
             C => (others => '0'),
             CARRYCASCIN => '0',
@@ -606,8 +642,8 @@ begin
             INMODE => "00000",
             MULTSIGNIN => '0',
             OPMODE => "1010101",
-            P => m21_p,
-            PCIN => m20_pc,
+            P => m21_p_conv,
+            PCIN => m20_pc_conv,
             RSTA => '0',
             RSTALLCARRYIN => '0',
             RSTALUMODE => '0',
@@ -636,12 +672,12 @@ begin
             PREG => 1
             )
         port map (
-            A => d1sign & m_in.data1(63 downto 48),
+            A => std_logic_vector(d1sign & m_in.data1(63 downto 48)),
             ACIN => (others => '0'),
             ALUMODE => "0000",
-            B => '0' & m_in.data2(50 downto 34),
+            B => std_logic_vector('0' & m_in.data2(50 downto 34)),
             BCIN => (others => '0'),
-            C => "00" & addend(127 downto 82),
+            C => std_logic_vector("00" & addend(127 downto 82)),
             CARRYCASCIN => '0',
             CARRYIN => '0',
             CARRYINSEL => "000",
@@ -663,9 +699,9 @@ begin
             INMODE => "00000",
             MULTSIGNIN => '0',
             OPMODE => "0110101",
-            P => m22_p,
+            P => m22_p_conv,
             PCIN => (others => '0'),
-            PCOUT => m22_pc,
+            PCOUT => m22_pc_conv,
             RSTA => '0',
             RSTALLCARRYIN => '0',
             RSTALUMODE => '0',
@@ -694,10 +730,10 @@ begin
             PREG => 0
             )
         port map (
-            A => d1sign & m_in.data1(63 downto 48),
+            A => std_logic_vector(d1sign & m_in.data1(63 downto 48)),
             ACIN => (others => '0'),
             ALUMODE => "0000",
-            B => d2sign & m_in.data2(63 downto 51),
+            B => std_logic_vector(d2sign & m_in.data2(63 downto 51)),
             BCIN => (others => '0'),
             C => (others => '0'),
             CARRYCASCIN => '0',
@@ -721,8 +757,8 @@ begin
             INMODE => "00000",
             MULTSIGNIN => '0',
             OPMODE => "1010101",
-            P => m23_p,
-            PCIN => m22_pc,
+            P => m23_p_conv,
+            PCIN => m22_pc_conv,
             RSTA => '0',
             RSTALLCARRYIN => '0',
             RSTALUMODE => '0',
@@ -760,19 +796,19 @@ begin
             MREG => 0,
             OPMODEREG => 0,
             PREG => 0,
-            USE_MULT => "none"
+            USE_MULT => "NONE"
             )
         port map (
-            A => pp0(79 downto 50),
+            A => std_logic_vector(pp0(79 downto 50)),
             ACIN => (others => '0'),
             ALUMODE => "0000",
-            B => pp0(49 downto 32),
+            B => std_logic_vector(pp0(49 downto 32)),
             BCIN => (others => '0'),
-            C => pp1(79 downto 32),
+            C => std_logic_vector(pp1(79 downto 32)),
             CARRYCASCIN => '0',
             CARRYIN => '0',
             CARRYINSEL => "000",
-            CARRYOUT => s0_carry,
+            CARRYOUT => s0_carry_conv,
             CEA1 => '0',
             CEA2 => '0',
             CEAD => '0',
@@ -792,7 +828,7 @@ begin
             MULTSIGNIN => '0',
             OPMODE => "0001111",
             PCIN => (others => '0'),
-            PCOUT => s0_pc,
+            PCOUT => s0_pc_conv,
             RSTA => '0',
             RSTALLCARRYIN => '0',
             RSTALUMODE => '0',
@@ -819,15 +855,15 @@ begin
             MREG => 0,
             OPMODEREG => 0,
             PREG => 1,
-            USE_MULT => "none"
+            USE_MULT => "NONE"
             )
         port map (
-            A => pp0(127 downto 98),
+            A => std_logic_vector(pp0(127 downto 98)),
             ACIN => (others => '0'),
             ALUMODE => "0000",
-            B => pp0(97 downto 80),
+            B => std_logic_vector(pp0(97 downto 80)),
             BCIN => (others => '0'),
-            C => pp1(127 downto 80),
+            C => std_logic_vector(pp1(127 downto 80)),
             CARRYCASCIN => '0',
             CARRYIN => s0_carry(3),
             CARRYINSEL => "000",
@@ -850,7 +886,7 @@ begin
             MULTSIGNIN => '0',
             OPMODE => "0001111",
             PCIN => (others => '0'),
-            PCOUT => s1_pc,
+            PCOUT => s1_pc_conv,
             RSTA => '0',
             RSTALLCARRYIN => '0',
             RSTALUMODE => '0',
@@ -878,20 +914,20 @@ begin
             MREG => 0,
             OPMODEREG => 0,
             PREG => 1,
-            USE_MULT => "none",
+            USE_MULT => "NONE",
             USE_PATTERN_DETECT => "PATDET"
             )
         port map (
-            A => pp23(79 downto 50),
+            A => std_logic_vector(pp23(79 downto 50)),
             ACIN => (others => '0'),
             ALUMODE => "00" & rnot_1 & '0',
-            B => pp23(49 downto 32),
+            B => std_logic_vector(pp23(49 downto 32)),
             BCIN => (others => '0'),
             C => (others => '0'),
             CARRYCASCIN => '0',
             CARRYIN => sumlo(8),
             CARRYINSEL => "000",
-            CARRYOUT => p0_carry,
+            CARRYOUT => p0_carry_conv,
             CEA1 => '0',
             CEA2 => '0',
             CEAD => '0',
@@ -910,10 +946,10 @@ begin
             INMODE => "00000",
             MULTSIGNIN => '0',
             OPMODE => "0010011",
-            P => product(79 downto 32),
+            P => product_conv(79 downto 32),
             PATTERNDETECT => p0_pat,
             PATTERNBDETECT => p0_patb,
-            PCIN => s0_pc,
+            PCIN => s0_pc_conv,
             RSTA => '0',
             RSTALLCARRYIN => '0',
             RSTALUMODE => '0',
@@ -941,14 +977,14 @@ begin
             MREG => 0,
             OPMODEREG => 0,
             PREG => 0,
-            USE_MULT => "none",
+            USE_MULT => "NONE",
             USE_PATTERN_DETECT => "PATDET"
             )
         port map (
-            A => pp23(127 downto 98),
+            A => std_logic_vector(pp23(127 downto 98)),
             ACIN => (others => '0'),
             ALUMODE => "00" & rnot_1 & '0',
-            B => pp23(97 downto 80),
+            B => std_logic_vector(pp23(97 downto 80)),
             BCIN => (others => '0'),
             C => (others => '0'),
             CARRYCASCIN => '0',
@@ -972,10 +1008,10 @@ begin
             INMODE => "00000",
             MULTSIGNIN => '0',
             OPMODE => "0010011",
-            P => product(127 downto 80),
+            P => product_conv(127 downto 80),
             PATTERNDETECT => p1_pat,
             PATTERNBDETECT => p1_patb,
-            PCIN => s1_pc,
+            PCIN => s1_pc_conv,
             RSTA => '0',
             RSTALLCARRYIN => '0',
             RSTALUMODE => '0',
@@ -1029,7 +1065,10 @@ end entity short_multiply;
 
 architecture behaviour of short_multiply is
     signal mshort_p : std_ulogic_vector(47 downto 0);
+    signal mshort_p_conv : std_logic_vector(47 downto 0);
 begin
+    mshort_p_conv <= std_logic_vector(mshort_p);
+    
     mshort: DSP48E1
         generic map (
             ACASCREG => 0,
@@ -1046,10 +1085,10 @@ begin
             PREG => 0
             )
         port map (
-            A => std_ulogic_vector(resize(signed(a_in(15 downto 0)), 30)),
+            A => std_logic_vector(resize(signed(a_in(15 downto 0)), 30)),
             ACIN => (others => '0'),
             ALUMODE => "0000",
-            B => std_ulogic_vector(resize(signed(b_in(15 downto 0)), 18)),
+            B => std_logic_vector(resize(signed(b_in(15 downto 0)), 18)),
             BCIN => (others => '0'),
             C => 48x"0",
             CARRYCASCIN => '0',
@@ -1073,7 +1112,7 @@ begin
             INMODE => "00000",
             MULTSIGNIN => '0',
             OPMODE => "0110101",
-            P => mshort_p,
+            P => mshort_p_conv,
             PCIN => (others => '0'),
             RSTA => '0',
             RSTALLCARRYIN => '0',

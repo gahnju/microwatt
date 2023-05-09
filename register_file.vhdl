@@ -4,6 +4,7 @@ use ieee.numeric_std.all;
 
 library work;
 use work.common.all;
+use work.CommonDef.all;
 
 entity register_file is
     generic (
@@ -64,10 +65,10 @@ begin
             if w_in.write_enable = '1' then
                 w_addr := w_in.write_reg;
                 if HAS_FPU and w_addr(5) = '1' then
-                    report "Writing FPR " & to_hstring(w_addr(4 downto 0)) & " " & to_hstring(w_in.write_data);
+                    report "Writing FPR " & get_hstring(w_addr(4 downto 0)) & " " & get_hstring(w_in.write_data);
                 else
                     w_addr(5) := '0';
-                    report "Writing GPR " & to_hstring(w_addr) & " " & to_hstring(w_in.write_data);
+                    report "Writing GPR " & get_hstring(w_addr) & " " & get_hstring(w_in.write_data);
                 end if;
                 assert not(is_x(w_in.write_data)) and not(is_x(w_in.write_reg)) severity failure;
                 registers(to_integer(unsigned(w_addr))) <= w_in.write_data;
@@ -160,13 +161,13 @@ begin
         end if;
 
         if d_in.read1_enable = '1' then
-            report "Reading GPR " & to_hstring(addr_1_reg) & " " & to_hstring(out_data_1);
+            report "Reading GPR " & get_hstring(addr_1_reg) & " " & get_hstring(out_data_1);
         end if;
         if d_in.read2_enable = '1' then
-            report "Reading GPR " & to_hstring(addr_2_reg) & " " & to_hstring(out_data_2);
+            report "Reading GPR " & get_hstring(addr_2_reg) & " " & get_hstring(out_data_2);
         end if;
         if d_in.read3_enable = '1' then
-            report "Reading GPR " & to_hstring(addr_3_reg) & " " & to_hstring(out_data_3);
+            report "Reading GPR " & get_hstring(addr_3_reg) & " " & get_hstring(out_data_3);
         end if;
 
         d_out.read1_data <= out_data_1;
@@ -198,7 +199,7 @@ begin
         begin
             if sim_dump = '1' then
                 loop_0: for i in 0 to 31 loop
-                    report "GPR" & integer'image(i) & " " & to_hstring(registers(i));
+                    report "GPR" & integer'image(i) & " " & get_hstring(registers(i));
                 end loop loop_0;
                 sim_dump_done <= '1';
             else

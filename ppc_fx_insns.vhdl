@@ -4,6 +4,7 @@ use ieee.numeric_std.all;
 
 library work;
 use work.helpers.all;
+use work.CommonDef.all;
 
 package ppc_fx_insns is
         function ppc_addi (ra: std_ulogic_vector(63 downto 0); si: std_ulogic_vector(15 downto 0)) return std_ulogic_vector;
@@ -106,32 +107,32 @@ package body ppc_fx_insns is
 
         function ppc_addic (ra: std_ulogic_vector(63 downto 0); si: std_ulogic_vector(15 downto 0)) return std_ulogic_vector is
         begin
-                return std_logic_vector(resize(unsigned(ra), 65) + unsigned(resize(signed(si), 64)));
+                return std_ulogic_vector(resize(unsigned(ra), 65) + unsigned(resize(signed(si), 64)));
         end;
 
         function ppc_adde (ra, rb: std_ulogic_vector(63 downto 0); carry: std_ulogic) return std_ulogic_vector is
         begin
-                return std_logic_vector(resize(unsigned(ra), 65) + resize(unsigned(rb), 65) + carry);
+                return std_ulogic_vector(resize(unsigned(ra), 65) + resize(unsigned(rb), 65) + ("" & carry));
         end;
 
         function ppc_subfic (ra: std_ulogic_vector(63 downto 0); si: std_ulogic_vector(15 downto 0)) return std_ulogic_vector is
         begin
-                return std_logic_vector(unsigned(resize(signed(si), 64)) + resize(unsigned(not(ra)), 65) + 1);
+                return std_ulogic_vector(unsigned(resize(signed(si), 64)) + resize(unsigned(not(ra)), 65) + 1);
         end;
 
         function ppc_subfc (ra, rb: std_ulogic_vector(63 downto 0)) return std_ulogic_vector is
         begin
-                return std_logic_vector(resize(unsigned(rb), 65) + resize(unsigned(not(ra)), 65) + 1);
+                return std_ulogic_vector(resize(unsigned(rb), 65) + resize(unsigned(not(ra)), 65) + 1);
         end;
 
         function ppc_subfe (ra, rb: std_ulogic_vector(63 downto 0); carry: std_ulogic) return std_ulogic_vector is
         begin
-                return std_logic_vector(resize(unsigned(rb), 65) + resize(unsigned(not(ra)), 65) + carry);
+                return std_ulogic_vector(resize(unsigned(rb), 65) + resize(unsigned(not(ra)), 65) + ("" & carry));
         end;
 
         function ppc_addze (ra: std_ulogic_vector(63 downto 0); carry: std_ulogic) return std_ulogic_vector is
         begin
-                return std_logic_vector(resize(unsigned(ra), 65) + carry);
+                return std_ulogic_vector(resize(unsigned(ra), 65) + ("" & carry));
         end;
 
         function ppc_addis (ra: std_ulogic_vector(63 downto 0); si: std_ulogic_vector(15 downto 0)) return std_ulogic_vector is
@@ -577,7 +578,7 @@ package body ppc_fx_insns is
                                 mask(i) := '1';
                         end if;
                 end loop;
-                carry := or (rs and mask) and rs(31);
+                carry := or_reduce(rs and mask) and rs(31);
                 return carry & std_ulogic_vector(resize(tmp, rs'length));
         end;
 

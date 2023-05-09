@@ -9,6 +9,7 @@ use work.helpers.all;
 use work.crhelpers.all;
 use work.insn_helpers.all;
 use work.ppc_fx_insns.all;
+use work.CommonDef.all;
 
 entity execute1 is
     generic (
@@ -391,7 +392,7 @@ begin
 	    invert_in => e_in.invert_a,
 	    invert_out => e_in.invert_out,
 	    result => logical_result,
-            datalen => e_in.data_len
+        datalen => std_logic_vector(e_in.data_len)
 	    );
 
     countbits_0: entity work.bit_counter
@@ -510,12 +511,12 @@ begin
         variable doit : std_ulogic;
     begin
         -- Read address mux and async RAM reading
-        if is_X(e_in.ramspr_even_rdaddr) then
+        if is_X(std_ulogic_vector(e_in.ramspr_even_rdaddr)) then
             even_rd_data := (others => 'X');
         else
             even_rd_data := even_sprs(to_integer(e_in.ramspr_even_rdaddr));
         end if;
-        if is_X(e_in.ramspr_even_rdaddr) then
+        if is_X(std_ulogic_vector(e_in.ramspr_even_rdaddr)) then
             odd_rd_data := (others => 'X');
         else
             odd_rd_data := odd_sprs(to_integer(e_in.ramspr_odd_rdaddr));
@@ -567,16 +568,16 @@ begin
     begin
         if rising_edge(clk) then
             if ramspr_even_wr_enab = '1' then
-		assert not is_X(ramspr_wr_addr) report "Writing to unknown address" severity FAILURE;
+		assert not is_X(std_ulogic_vector(ramspr_wr_addr)) report "Writing to unknown address" severity FAILURE;
                 even_sprs(to_integer(ramspr_wr_addr)) <= ramspr_even_wr_data;
                 report "writing even spr " & integer'image(to_integer(ramspr_wr_addr)) & " data=" &
-                    to_hstring(ramspr_even_wr_data);
+                    get_hstring(ramspr_even_wr_data);
             end if;
             if ramspr_odd_wr_enab = '1' then
-		assert not is_X(ramspr_wr_addr) report "Writing to unknown address" severity FAILURE;
+		assert not is_X(std_ulogic_vector(ramspr_wr_addr)) report "Writing to unknown address" severity FAILURE;
                 odd_sprs(to_integer(ramspr_wr_addr)) <= ramspr_odd_wr_data;
                 report "writing odd spr " & integer'image(to_integer(ramspr_wr_addr)) & " data=" &
-                    to_hstring(ramspr_odd_wr_data);
+                    get_hstring(ramspr_odd_wr_data);
             end if;
         end if;
     end process;
@@ -607,8 +608,8 @@ begin
                 ex2 <= ex2in;
                 ctrl <= ctrl_tmp;
                 if valid_in = '1' then
-                    report "execute " & to_hstring(e_in.nia) & " op=" & insn_type_t'image(e_in.insn_type) &
-                        " wr=" & to_hstring(ex1in.e.write_reg) & " we=" & std_ulogic'image(ex1in.e.write_enable) &
+                    report "execute " & get_hstring(e_in.nia) & " op=" & insn_type_t'image(e_in.insn_type) &
+                        " wr=" & get_hstring(ex1in.e.write_reg) & " we=" & std_ulogic'image(ex1in.e.write_enable) &
                         " tag=" & integer'image(ex1in.e.instr_tag.tag) & std_ulogic'image(ex1in.e.instr_tag.valid);
                 end if;
                 -- We mustn't get stalled on a cycle where execute2 is
@@ -855,8 +856,8 @@ begin
         else
             l := not e_in.is_32bit;
         end if;
-        zerolo := not (or (a_in(31 downto 0) xor b_in(31 downto 0)));
-        zerohi := not (or (a_in(63 downto 32) xor b_in(63 downto 32)));
+        zerolo := not (or_reduce (a_in(31 downto 0) xor b_in(31 downto 0)));
+        zerohi := not (or_reduce (a_in(63 downto 32) xor b_in(63 downto 32)));
         if zerolo = '1' and (l = '0' or zerohi = '1') then
             -- values are equal
             trapval <= "00100";
@@ -1081,7 +1082,7 @@ begin
                 v.e.intr_vec := 16#700#;
                 -- set bit 46 to say trap occurred
                 v.e.srr1(47 - 46) := '1';
-                if or (trapval and insn_to(e_in.insn)) = '1' then
+                if or_reduce (trapval and insn_to(e_in.insn)) = '1' then
                     -- generate trap-type program interrupt
                     v.trap := '1';
                     if e_in.valid = '1' then
@@ -1184,7 +1185,7 @@ begin
 		if e_in.spr_is_ram = '1' then
                     if e_in.valid = '1' and not is_X(e_in.insn) then
                         report "MFSPR to SPR " & integer'image(decode_spr_num(e_in.insn)) &
-                            "=" & to_hstring(alu_result);
+                            "=" & get_hstring(alu_result);
                     end if;
 		elsif e_in.spr_select.valid = '1' then
                     if e_in.valid = '1' and not is_X(e_in.insn) then
@@ -1243,7 +1244,7 @@ begin
 	    when OP_MTSPR =>
                 if e_in.valid = '1' and not is_X(e_in.insn) then
                     report "MTSPR to SPR " & integer'image(decode_spr_num(e_in.insn)) &
-                        "=" & to_hstring(c_in);
+                        "=" & get_hstring(c_in);
                 end if;
                 v.se.write_pmuspr := e_in.spr_select.ispmu;
                 if e_in.spr_select.valid = '1' and e_in.spr_select.ispmu = '0' then
@@ -1724,9 +1725,9 @@ begin
         cr_res := ex1.e.write_cr_data;
         cr_mask := ex1.e.write_cr_mask;
         if ex1.e.rc = '1' and ex1.e.write_enable = '1' then
-            rcnz_lo := or (rcresult(31 downto 0));
+            rcnz_lo := or_reduce (rcresult(31 downto 0));
             if ex1.e.mode_32bit = '0' then
-                rcnz_hi := or (rcresult(63 downto 32));
+                rcnz_hi := or_reduce (rcresult(63 downto 32));
                 zero := not (rcnz_hi or rcnz_lo);
                 sign := ex_result(63);
             else
@@ -1815,8 +1816,8 @@ begin
             variable xer : std_ulogic_vector(63 downto 0);
         begin
             if sim_dump = '1' then
-                report "LR " & to_hstring(even_sprs(to_integer(RAMSPR_LR)));
-                report "CTR " & to_hstring(odd_sprs(to_integer(RAMSPR_CTR)));
+                report "LR " & get_hstring(even_sprs(to_integer(RAMSPR_LR)));
+                report "CTR " & get_hstring(odd_sprs(to_integer(RAMSPR_CTR)));
                 sim_dump_done <= '1';
             else
                 sim_dump_done <= '0';

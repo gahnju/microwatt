@@ -20,7 +20,7 @@ begin
         generic map(
             SIM => true,
             MEMORY_SIZE => (384*1024),
-            RAM_INIT_FILE => "main_ram.bin",
+            RAM_INIT_FILE => "/afs/vlsilab.boeblingen.ibm.com/proj/ibmq/usr/gahejung/fusesoc_workspace/fusesoc_libraries/microwatt/hello_world/hello_world.bin",
             CLK_FREQ => 100000000
             )
         port map(

@@ -222,7 +222,7 @@ begin
     fetch1_0: entity work.fetch1
         generic map (
             RESET_ADDRESS => (others => '0'),
-	    ALT_RESET_ADDRESS => ALT_RESET_ADDRESS,
+	    ALT_RESET_ADDRESS => std_logic_vector(ALT_RESET_ADDRESS),
             HAS_BTC => HAS_BTC
             )
         port map (
